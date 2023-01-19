@@ -46,11 +46,13 @@ class MyCallbacks: public BLECharacteristicCallbacks {
         
         switch (rxValue[0]) {
           case '0':
+          delay(20);
           irsend.sendRaw(offAC, 419, 38);
           Serial.println("OFF");
           break;
           
           case '1':
+          delay(20);
           irsend.sendRaw(onAC, 419, 38);
           Serial.println("ON");
           break;
