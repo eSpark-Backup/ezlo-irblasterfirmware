@@ -7,13 +7,9 @@ int gdo0;
 
 void setup(){
 
-#ifdef ESP32
-gdo0 = 4;  // for esp32! GDO0 on GPIO pin 2.
-#elif ESP8266
-gdo0 = 5;  // for esp8266! GDO0 on pin 5 = D1.
-#else
-gdo0 = 6;  // for Arduino! GDO0 on pin 6.
-#endif 
+
+gdo0 = 10;  // for esp32! GDO0 on GPIO pin 10.
+
   
     Serial.begin(9600);
     
