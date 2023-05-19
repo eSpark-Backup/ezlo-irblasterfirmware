@@ -7,6 +7,9 @@
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #include "IRremoteESP8266.h"
+#include "rom/ets_sys.h"
+#include "esp_err.h"
+#include "driver/gpio.h"
 
 // Originally from https://github.com/shirriff/Arduino-IRremote/
 // Updated by markszabo (https://github.com/crankyoldgit/IRremoteESP8266) for
@@ -42,6 +45,22 @@ const uint32_t kDefaultMessageGap = 100000;
 /// Placeholder for missing sensor temp value
 /// @note Not using "-1" as it may be a valid external temp
 const float kNoTempValue = -100.0;
+
+// Arduino Functions
+static inline esp_err_t digitalWrite(unsigned char pin, bool state){
+	return gpio_set_level((gpio_num_t)pin, state);
+}
+
+static inline esp_err_t pinMode(unsigned char pin, gpio_mode_t mode)
+{
+  return gpio_set_direction((gpio_num_t)pin, mode);
+}
+
+static inline int digitalRead(unsigned char  pin){
+	return gpio_get_level((gpio_num_t)pin);
+}
+
+
 
 /// Enumerators and Structures for the Common A/C API.
 namespace stdAc {

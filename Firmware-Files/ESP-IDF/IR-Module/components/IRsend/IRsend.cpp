@@ -3,6 +3,12 @@
 // Copyright 2017,2019 David Conran
 #include "rom/ets_sys.h"
 #include "IRsend.h"
+#include "IRtimer.h"
+#include "driver/gpio.h"
+#include <cstring>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_timer.h"
 #ifndef UNIT_TEST
 //#include <Arduino.h>
 #else
@@ -13,12 +19,7 @@
 #ifdef UNIT_TEST
 #include <cmath>
 #endif
-#include "IRtimer.h"
-#include "driver/gpio.h"
-#include <cstring>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_timer.h"
+
 
 /// Constructor for an IRsend object.
 /// @param[in] IRsendPin Which GPIO pin to use when sending an IR command.
@@ -33,26 +34,6 @@
 
 #define HIGH 1
 #define LOW 0
-static inline esp_err_t digitalWrite(unsigned char pin, bool state){
-	return gpio_set_level((gpio_num_t)pin, state);
-}
-
-static inline esp_err_t pinMode(unsigned char pin, gpio_mode_t mode)
-{
-  return gpio_set_direction((gpio_num_t)pin, mode);
-}
-
-static inline int digitalRead(unsigned char  pin){
-	return gpio_get_level((gpio_num_t)pin);
-}
-
-static inline long map(long x, long in_min, long in_max, long out_min, long out_max) {
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
-
-static inline bool bitRead(uint8_t x,uint8_t y ){
-    return ((x >> y) & 0x01);
-}
 
 IRsend::IRsend(uint16_t IRsendPin, bool inverted, bool use_modulation)
     : IRpin(IRsendPin), periodOffset(kPeriodOffset) {
@@ -583,7 +564,7 @@ void IRsend::sendRaw(const uint16_t buf[], const uint16_t len,
      
     }
   }
-  printf("send Raw\n");
+
   ledOff();  // We potentially have ended with a mark(), so turn of the LED.
                      }
 #endif  // SEND_RAW
