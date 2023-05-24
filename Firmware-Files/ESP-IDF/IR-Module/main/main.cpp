@@ -1,18 +1,27 @@
 #include <stdio.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "esp_timer.h"
+#include "driver/gpio.h"
 #include <IRremoteESP8266.h>
 #include <IRsend.h>
 #include <IRtimer.h>
-#include "rom/ets_sys.h"
-#include "driver/gpio.h"
-#include "esp_log.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+#define HIGH 1
+#define LOW 0
+#define maxLen 800
+#define rxPinIR (gpio_num_t)18 //Receiver pin
+
+TaskHandle_t IR_receiver = NULL;
+TaskHandle_t IR_transmitter = NULL;
+
+volatile unsigned int irBuffer[maxLen]; //stores timings - volatile because changed by ISR
+volatile unsigned int x = 0; //Pointer thru irBuffer - volatile because changed by ISR
 const int buttonPin = 21;
 const uint16_t kIrLed = 8;  // 
 int state = 0;
 int buttonState = 0;
-#define HIGH 1
-#define LOW 0
+
 IRsend irsend(kIrLed);  // Set the GPIO to be used to sending the message.
 
 // Example of data captured by IRrecvDumpV2.ino
@@ -20,38 +29,68 @@ uint16_t onAC[419] = {9058, 4474,  664, 1644,  664, 566,  638, 568,  638, 1644, 
 
 uint16_t offAC[419] = {9028, 4476,  662, 1644,  664, 568,  638, 568,  636, 568,  638, 1644,  662, 1644,  664, 568,  638, 568,  638, 570,  636, 568,  636, 568,  638, 1644,  662, 568,  636, 568,  638, 568,  638, 568,  636, 568,  636, 570,  636, 570,  636, 570,  636, 568,  638, 1646,  662, 570,  636, 570,  636, 570,  636, 570,  636, 570,  636, 570,  636, 1646,  662, 568,  636, 1670,  638, 570,  636, 570,  660, 1646,  662, 546,  636, 19976,  666, 1642,  664, 566,  640, 1644,  664, 568,  638, 1642,  664, 566,  638, 1644,  664, 566,  638, 568,  638, 568,  638, 568,  638, 568,  638, 568,  636, 568,  638, 1644,  662, 1644,  662, 568,  638, 568,  636, 570,  636, 568,  638, 568,  636, 568,  636, 568,  638, 568,  636, 570,  636, 568,  636, 568,  636, 570,  636, 570,  636, 570,  636, 1646,  662, 568,  636, 39986,  9006, 4476,  664, 1644,  664, 568,  638, 568,  638, 568,  638, 1644,  662, 1644,  662, 568,  638, 568,  636, 568,  636, 570,  636, 568,  638, 1644,  662, 568,  636, 570,  636, 568,  636, 570,  636, 570,  636, 570,  636, 570,  636, 570,  636, 570,  636, 1670,  638, 570,  636, 570,  636, 570,  636, 570,  636, 570,  634, 570,  636, 1670,  638, 1670,  638, 1668,  638, 570,  634, 570,  634, 1670,  636, 570,  634, 19976,  664, 568,  638, 568,  638, 566,  638, 568,  638, 568,  638, 568,  638, 568,  638, 568,  638, 568,  636, 568,  638, 568,  638, 568,  638, 568,  638, 568,  638, 568,  636, 568,  638, 568,  636, 568,  636, 568,  638, 568,  636, 1670,  638, 568,  636, 1670,  638, 570,  636, 570,  636, 570,  636, 570,  636, 570,  636, 570,  636, 570,  636, 570,  636, 1670,  636, 39986,  9006, 4476,  664, 566,  638, 568,  638, 568,  638, 568,  638, 568,  638, 568,  636, 568,  638, 568,  638, 568,  638, 568,  638, 568,  638, 568,  636, 568,  638, 568,  636, 570,  636, 568,  636, 570,  636, 570,  636, 570,  636, 570,  636, 568,  636, 570,  636, 568,  636, 570,  636, 570,  636, 570,  636, 568,  636, 570,  636, 570,  636, 1672,  636, 572,  634, 1672,  636, 570,  634, 1672,  636, 594,  612, 19974,  664, 568,  638, 568,  638, 568,  638, 570,  636, 568,  638, 566,  638, 568,  638, 568,  638, 568,  636, 568,  636, 570,  636, 568,  638, 568,  636, 568,  638, 568,  638, 568,  638, 568,  636, 570,  638, 568,  636, 568,  636, 570,  636, 570,  636, 570,  636, 568,  636, 570,  636, 570,  636, 570,  636, 570,  636, 570,  636, 1672,  636, 570,  636, 1670,  636};
 
+static void IRAM_ATTR gpio_interrupt_handler(void *args) {
+  if (x > maxLen) return; //ignore if irBuffer is already full
+  irBuffer[x++] = esp_timer_get_time(); //just continually record the time-stamp of signal transitions
+}
 
+void IRreceiver(void *arg)
+{
+    gpio_set_intr_type(rxPinIR,GPIO_INTR_ANYEDGE);
+    gpio_install_isr_service(0);
+    gpio_isr_handler_add(rxPinIR, gpio_interrupt_handler, (void *)rxPinIR);
+    while(1){
+    printf("Press the button on the remote for receiving now (once only)\n");
+    vTaskDelay(5000/portTICK_PERIOD_MS); // pause 5 secs
+    if (x) { //if a signal is captured
+
+     printf("Raw: (%d)",x-1); //dump raw header format - for library
+     for (int i = 1; i < x; i++) { //now dump the times
+       // if (!(i & 0x1)) {
+       // printf("-");
+       // }
+       printf(" %d, ",irBuffer[i] - irBuffer[i - 1]);
+     }
+     x = 0;
+     printf("\n");
+     gpio_isr_handler_add(rxPinIR, gpio_interrupt_handler, (void *)rxPinIR);
+}
+}
+    }
+
+void IRtransmitter(void *arg)
+{
+    pinMode(buttonPin, GPIO_MODE_INPUT);
+    gpio_set_pull_mode((gpio_num_t)buttonPin,GPIO_PULLUP_ONLY);
+    irsend.begin();
+    while(1)
+    {
+         buttonState = digitalRead(buttonPin);
+          vTaskDelay(300/portTICK_PERIOD_MS);
+
+          if (buttonState == LOW){
+            state++; 
+          
+          }
+          if (state == 1){
+          
+            irsend.sendRaw(onAC, 419, 38); 
+            printf("AC On\n");
+            state++;
+          }
+
+          else if(state == 3){
+
+            
+            irsend.sendRaw(offAC, 419, 38);
+            printf("AC Off\n");
+            state = 0;
+          }
+    }
+}
 
 extern "C" void app_main(void)
 {
-  pinMode(buttonPin, GPIO_MODE_INPUT);
-  gpio_set_pull_mode((gpio_num_t)buttonPin,GPIO_PULLUP_ONLY);
-  irsend.begin();
-
-
-
-while(1){
-  buttonState = digitalRead(buttonPin);
-  vTaskDelay(100/portTICK_PERIOD_MS);
-
-  if (buttonState == LOW){
-    state++; 
-   
-  }
-  if (state == 1){
-   
-    irsend.sendRaw(onAC, 419, 38); 
-    printf("AC On\n");
-    state++;
-  }
-
-  else if(state == 3){
-
-    
-    irsend.sendRaw(offAC, 419, 38);
-    printf("AC Off\n");
-    state = 0;
-  }
-
-}
-}
+   xTaskCreate(IRreceiver, "Receiver_Task", 4096, NULL, 10, &IR_receiver);
+   xTaskCreate(IRtransmitter, "Transmitter_Task", 4096, NULL,10, &IR_transmitter);
+ }
