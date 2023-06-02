@@ -17,10 +17,14 @@ cc1101 Driver for RC Switch. Mod by Little Satan. With permission to modify and 
 #define ELECHOUSE_CC1101_SRC_DRV_h
 
 #include <stdint.h>
+#include <driver/spi_master.h>
+#include <string.h>
+#include "esp_log.h"
 
 typedef uint8_t byte;
 #define HIGH 1
 #define LOW 0
+static const char* TAG = "CC1101";
 //***************************************CC1101 define**************************************************//
 // CC1101 CONFIG REGSITER
 #define CC1101_IOCFG2       0x00        // GDO2 output pin configuration
@@ -113,10 +117,9 @@ typedef uint8_t byte;
 #define CC1101_TXFIFO       0x3F
 #define CC1101_RXFIFO       0x3F
 
-
-// int digitalRead(gpio_num_t);
-// static inline esp_err_t digitalWrite(gpio_num_t, bool);
 //************************************* class **************************************************//
+
+#define delay(ms) vTaskDelay(ms/ portTICK_PERIOD_MS)
 class ELECHOUSE_CC1101
 {
 private:
@@ -196,9 +199,9 @@ public:
   byte getPartnum(void);
   byte getVersion(void);
   void spiTransferWord(uint16_t );
-  // int digitalRead(gpio_num_t);
-  // static inline esp_err_t digitalWrite(gpio_num_t, bool);
 };
+void spi_init();
+uint8_t spi_transfer(uint8_t );
 
 extern ELECHOUSE_CC1101 ELECHOUSE_cc1101;
 
