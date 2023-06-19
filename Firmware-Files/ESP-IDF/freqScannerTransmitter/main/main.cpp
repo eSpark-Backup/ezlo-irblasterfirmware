@@ -32,9 +32,9 @@ static void getData(void *arg){
        ESP_LOGI(TAG,"%f\n",freq_set);
       ESP_LOGI(TAG,"GET DATA STARTED!");
       int pin=9;
-      // cc1101.setMHZ(freq_set);
+       cc1101.setMHZ(freq_set);
       mySwitch1.enableReceive(pin);  // Receiver on interrupt 0
-      cc1101.SetRx();  // set Receive on
+      // cc1101.SetRx();  // set Receive on
       ESP_LOGI(TAG,"RX MODE");
       // Check the CC1101 Spi connection.
       if (cc1101.getCC1101()) { 
@@ -44,6 +44,7 @@ static void getData(void *arg){
        ESP_LOGI(TAG,"CC1101: Connection error.");
       }
   while(1){
+      vTaskDelay(75/portTICK_PERIOD_MS);
    if (mySwitch1.available()) {
       if(p_mode){
             if(track==1){
@@ -61,8 +62,8 @@ static void getData(void *arg){
             else if(track==4){
                   d=mySwitch1.getReceivedValue(); 
                   printf("Value Stored in d\n");
-                  p_mode=false;
-                  printf("Exited Programming Mode\n");
+                  // p_mode=false;
+                  // printf("Exited Programming Mode\n");
             }
 
             }
@@ -79,8 +80,8 @@ static void getData(void *arg){
 
 
 void sweepFrequencyTask(void *args){
-      float start_freq = 315;    //start scan frequency set.
-      float stop_freq = 915;    //stop scan frequency set.
+      float start_freq = 300;    //start scan frequency set.
+      float stop_freq = 450;    //stop scan frequency set.
       int rssi_threshold = -55; // set the threshold to react. the value should be between -20 and -90. recommended -75.
       float freq = start_freq; //nun
       long compare_freq=0;
@@ -89,7 +90,7 @@ void sweepFrequencyTask(void *args){
       int mark_rssi=-100;
 
  //ELECHOUSE_cc1101.Init();
-      cc1101.setRxBW(58);
+    // cc1101.setRxBW(58);
       cc1101.SetRx();
       ESP_LOGI(TAG,"Frequency scanner Ready");
 
@@ -121,7 +122,7 @@ freq+=0.1;
             compare_freq = 0;
             mark_freq = 0;
             
-            xTaskCreatePinnedToCore(getData, "get_data_task", 2048*2, NULL, 11, NULL,1);
+            xTaskCreate(getData, "get_data_task", 2048*2, NULL, 12, NULL);
             freq=start_freq;
             vTaskDelete(NULL);
       }
@@ -161,7 +162,6 @@ static void echo_task(void *arg)
     uint8_t *data = (uint8_t *) malloc(BUF_SIZE);
 
     while (1) {
-            vTaskDelay(10/portTICK_PERIOD_MS);
         // Read data from the UART
         int len = uart_read_bytes(ECHO_UART_PORT_NUM, data, (BUF_SIZE - 1), 20 / portTICK_RATE_MS);
         // Write data back to the UART
