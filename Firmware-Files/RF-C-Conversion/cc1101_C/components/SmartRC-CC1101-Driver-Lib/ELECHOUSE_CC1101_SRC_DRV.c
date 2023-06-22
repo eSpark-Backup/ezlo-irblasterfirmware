@@ -1,6 +1,6 @@
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 #include "driver/gpio.h"
-#include <cstring>
+#include "string.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <math.h>
@@ -23,7 +23,7 @@
 
 static spi_device_handle_t _handle;
 
-RCSwitch mySwitch = RCSwitch();
+// RCSwitch mySwitch = RCSwitch();
 
 /**
  * Arduino Macros
@@ -105,21 +105,21 @@ static inline void cc1101_Deselect(){
 #define wait_GDO0_low()  while(getGDO0state())
 
 /****************************************************************/
-uint8_t PA_TABLE[8]     {0x00,0xC0,0x00,0x00,0x00,0x00,0x00,0x00};
+uint8_t PA_TABLE[8]  =   {0x00,0xC0,0x00,0x00,0x00,0x00,0x00,0x00};
 //                       -30  -20  -15  -10   0    5    7    10
-uint8_t PA_TABLE_315[8] {0x12,0x0D,0x1C,0x34,0x51,0x85,0xCB,0xC2,};             //300 - 348
-uint8_t PA_TABLE_433[8] {0x12,0x0E,0x1D,0x34,0x60,0x84,0xC8,0xC0,};             //387 - 464
+uint8_t PA_TABLE_315[8] ={0x12,0x0D,0x1C,0x34,0x51,0x85,0xCB,0xC2,};             //300 - 348
+uint8_t PA_TABLE_433[8] ={0x12,0x0E,0x1D,0x34,0x60,0x84,0xC8,0xC0,};             //387 - 464
 //                        -30  -20  -15  -10  -6    0    5    7    10   12
-uint8_t PA_TABLE_868[10] {0x03,0x17,0x1D,0x26,0x37,0x50,0x86,0xCD,0xC5,0xC0,};  //779 - 899.99
+uint8_t PA_TABLE_868[10] ={0x03,0x17,0x1D,0x26,0x37,0x50,0x86,0xCD,0xC5,0xC0,};  //779 - 899.99
 //                        -30  -20  -15  -10  -6    0    5    7    10   11
-uint8_t PA_TABLE_915[10] {0x03,0x0E,0x1E,0x27,0x38,0x8E,0x84,0xCC,0xC3,0xC0,};  //900 - 928
+uint8_t PA_TABLE_915[10] ={0x03,0x0E,0x1E,0x27,0x38,0x8E,0x84,0xCC,0xC3,0xC0,};  //900 - 928
 /****************************************************************
 *FUNCTION NAME:SpiStart
 *FUNCTION     :spi communication start
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-esp_err_t ELECHOUSE_CC1101::SpiStart(void)
+esp_err_t SpiStart(void)
 {
   
  return spi_init();
@@ -131,7 +131,7 @@ esp_err_t ELECHOUSE_CC1101::SpiStart(void)
 *INPUT        : none
 *OUTPUT       : none
 ****************************************************************/
-void ELECHOUSE_CC1101::GDO_Set (void)
+void GDO_Set (void)
 {
 	pinMode(GDO0, OUTPUT);
 	pinMode(GDO2, INPUT);
@@ -142,7 +142,7 @@ void ELECHOUSE_CC1101::GDO_Set (void)
 *INPUT        : none
 *OUTPUT       : none
 ****************************************************************/
-void ELECHOUSE_CC1101::GDO0_Set (void)
+void GDO0_Set (void)
 {
   pinMode(GDO0, INPUT);
 }
@@ -152,7 +152,7 @@ void ELECHOUSE_CC1101::GDO0_Set (void)
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::Reset (void)
+void Reset (void)
 {
 digitalWrite(SS_PIN, LOW);
 delay(1);
@@ -165,7 +165,7 @@ while(digitalRead(MISO_PIN));
 digitalWrite(SS_PIN, HIGH);
 }
 
-void ELECHOUSE_CC1101::spiTransferWord(uint16_t inputData) {
+void spiTransferWord(uint16_t inputData) {
 
   spi_transfer(inputData);
 }
@@ -175,7 +175,7 @@ void ELECHOUSE_CC1101::spiTransferWord(uint16_t inputData) {
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-esp_err_t ELECHOUSE_CC1101::Init(void)
+esp_err_t Init(void)
 {
   
 setSpi();
@@ -194,7 +194,7 @@ return ret;
 // *INPUT        :addr: register address; value: register value
 // *OUTPUT       :none
 // ****************************************************************/
-void ELECHOUSE_CC1101::SpiWriteReg(byte addr, byte value)
+void SpiWriteReg(byte addr, byte value)
 {
    cc1101_Select();											// Select CC1101
 	wait_Miso();													// Wait until MISO goes low
@@ -208,7 +208,7 @@ void ELECHOUSE_CC1101::SpiWriteReg(byte addr, byte value)
 *INPUT        :addr: register address; buffer:register value array; num:number to write
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::SpiWriteBurstReg(byte addr, byte *buffer, byte num)
+void SpiWriteBurstReg(byte addr, byte *buffer, byte num)
 {
   
   byte i, temp;
@@ -229,7 +229,7 @@ void ELECHOUSE_CC1101::SpiWriteBurstReg(byte addr, byte *buffer, byte num)
 *INPUT        :strobe: command; //refer define in CC1101.h//
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::SpiStrobe(byte strobe)
+void SpiStrobe(byte strobe)
 {
   // SpiStart();
   digitalWrite(SS_PIN, LOW);
@@ -243,7 +243,7 @@ void ELECHOUSE_CC1101::SpiStrobe(byte strobe)
 *INPUT        :addr: register address
 *OUTPUT       :register value
 ****************************************************************/
-byte ELECHOUSE_CC1101::SpiReadReg(byte addr) 
+byte SpiReadReg(byte addr) 
 {
 
   byte temp, val;
@@ -262,7 +262,7 @@ byte ELECHOUSE_CC1101::SpiReadReg(byte addr)
 *INPUT        :addr: register address; buffer:array to store register value; num: number to read
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::SpiReadBurstReg(byte addr, byte *buffer, byte num)
+void SpiReadBurstReg(byte addr, byte *buffer, byte num)
 {
 
   byte i,temp;
@@ -285,7 +285,7 @@ void ELECHOUSE_CC1101::SpiReadBurstReg(byte addr, byte *buffer, byte num)
 *INPUT        :addr: register address
 *OUTPUT       :status value
 ****************************************************************/
-byte ELECHOUSE_CC1101::SpiReadStatus(byte addr) 
+byte SpiReadStatus(byte addr) 
 {
   byte value=0,temp;
   // SpiStart();
@@ -305,7 +305,7 @@ byte ELECHOUSE_CC1101::SpiReadStatus(byte addr)
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setSpi(void){
+void setSpi(void){
   SCK_PIN = 13; MISO_PIN = 11; MOSI_PIN = 12; SS_PIN = 14;
  }
 
@@ -315,7 +315,7 @@ void ELECHOUSE_CC1101::setSpi(void){
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setSpiPin(byte sck, byte miso, byte mosi, byte ss){
+void setSpiPin(byte sck, byte miso, byte mosi, byte ss){
  
   spi = 1;
   SCK_PIN = sck;
@@ -329,7 +329,7 @@ void ELECHOUSE_CC1101::setSpiPin(byte sck, byte miso, byte mosi, byte ss){
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::addSpiPin(byte sck, byte miso, byte mosi, byte ss, byte modul){
+void addSpiPin(byte sck, byte miso, byte mosi, byte ss, byte modul){
   spi = 1;
   SCK_PIN_M[modul] = sck;
   MISO_PIN_M[modul] = miso;
@@ -342,7 +342,7 @@ void ELECHOUSE_CC1101::addSpiPin(byte sck, byte miso, byte mosi, byte ss, byte m
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setGDO(byte gdo0, byte gdo2){
+void setGDO(byte gdo0, byte gdo2){
 GDO0 = gdo0;
 GDO2 = gdo2;  
 GDO_Set();
@@ -353,7 +353,7 @@ GDO_Set();
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setGDO0(byte gdo0){
+void setGDO0(byte gdo0){
 GDO0 = gdo0;
 GDO0_Set();
 }
@@ -363,7 +363,7 @@ GDO0_Set();
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::addGDO(byte gdo0, byte gdo2, byte modul){
+void addGDO(byte gdo0, byte gdo2, byte modul){
 GDO0_M[modul] = gdo0;
 GDO2_M[modul] = gdo2;  
 gdo_set=2;
@@ -375,7 +375,7 @@ GDO_Set();
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::addGDO0(byte gdo0, byte modul){
+void addGDO0(byte gdo0, byte modul){
 GDO0_M[modul] = gdo0;
 gdo_set=1;
 GDO0_Set();
@@ -386,7 +386,7 @@ GDO0_Set();
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setModul(byte modul){
+void setModul(byte modul){
   SCK_PIN = SCK_PIN_M[modul];
   MISO_PIN = MISO_PIN_M[modul];
   MOSI_PIN = MOSI_PIN_M[modul];
@@ -405,7 +405,7 @@ void ELECHOUSE_CC1101::setModul(byte modul){
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setCCMode(bool s){
+void setCCMode(bool s){
 ccmode = s;
 if (ccmode == 1){
 SpiWriteReg(CC1101_IOCFG2,      0x0B);
@@ -428,7 +428,7 @@ setModulation(modulation);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setModulation(byte m){
+void setModulation(byte m){
 if (m>4){m=4;}
 modulation = m;
 Split_MDMCFG2();
@@ -450,7 +450,7 @@ setPA(pa);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setPA(int p)
+void setPA(int p)
 {
 int a=0;
 pa = p;
@@ -518,7 +518,7 @@ SpiWriteBurstReg(CC1101_PATABLE,PA_TABLE,8);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setMHZ(float mhz){
+void setMHZ(float mhz){
 uint16_t freq2 = 0;
 uint16_t freq1 = 0;
 uint16_t freq0 = 0;
@@ -553,14 +553,14 @@ Calibrate();
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::Calibrate(void){
+void Calibrate(void){
 
 if (MHz >= 300 && MHz <= 348){
 SpiWriteReg(CC1101_FSCTRL0, map(MHz, 300, 348, clb1[0], clb1[1]));
 if (MHz < 322.88){SpiWriteReg(CC1101_TEST0,0x0B);}
 else{
 SpiWriteReg(CC1101_TEST0,0x09);
-int s = ELECHOUSE_cc1101.SpiReadStatus(CC1101_FSCAL2);
+int s = SpiReadStatus(CC1101_FSCAL2);
 if (s<32){SpiWriteReg(CC1101_FSCAL2, s+32);}
 if (last_pa != 1){setPA(pa);}
 }
@@ -570,7 +570,7 @@ SpiWriteReg(CC1101_FSCTRL0, map(MHz, 378, 464, clb2[0], clb2[1]));
 if (MHz < 430.5){SpiWriteReg(CC1101_TEST0,0x0B);}
 else{
 SpiWriteReg(CC1101_TEST0,0x09);
-int s = ELECHOUSE_cc1101.SpiReadStatus(CC1101_FSCAL2);
+int s = SpiReadStatus(CC1101_FSCAL2);
 if (s<32){SpiWriteReg(CC1101_FSCAL2, s+32);}
 if (last_pa != 2){setPA(pa);}
 }
@@ -580,7 +580,7 @@ SpiWriteReg(CC1101_FSCTRL0, map(MHz, 779, 899, clb3[0], clb3[1]));
 if (MHz < 861){SpiWriteReg(CC1101_TEST0,0x0B);}
 else{
 SpiWriteReg(CC1101_TEST0,0x09);
-int s = ELECHOUSE_cc1101.SpiReadStatus(CC1101_FSCAL2);
+int s = SpiReadStatus(CC1101_FSCAL2);
 if (s<32){SpiWriteReg(CC1101_FSCAL2, s+32);}
 if (last_pa != 3){setPA(pa);}
 }
@@ -588,7 +588,7 @@ if (last_pa != 3){setPA(pa);}
 else if (MHz >= 900 && MHz <= 928){
 SpiWriteReg(CC1101_FSCTRL0, map(MHz, 900, 928, clb4[0], clb4[1]));
 SpiWriteReg(CC1101_TEST0,0x09);
-int s = ELECHOUSE_cc1101.SpiReadStatus(CC1101_FSCAL2);
+int s = SpiReadStatus(CC1101_FSCAL2);
 if (s<32){SpiWriteReg(CC1101_FSCAL2, s+32);}
 if (last_pa != 4){setPA(pa);}
 }
@@ -599,7 +599,7 @@ if (last_pa != 4){setPA(pa);}
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setClb(byte b, byte s, byte e){
+void setClb(byte b, byte s, byte e){
 if (b == 1){
 clb1[0]=s;
 clb1[1]=e;  
@@ -623,7 +623,7 @@ clb4[1]=e;
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-bool ELECHOUSE_CC1101::getCC1101(void){
+bool getCC1101(void){
 setSpi();
 if (SpiReadStatus(0x31)>0){
 return 1;
@@ -637,7 +637,7 @@ return 0;
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-byte ELECHOUSE_CC1101::getMode(void){
+byte getMode(void){
 return trxstate;
 }
 /****************************************************************
@@ -646,7 +646,7 @@ return trxstate;
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setSyncWord(byte sh, byte sl){
+void setSyncWord(byte sh, byte sl){
 SpiWriteReg(CC1101_SYNC1, sh);
 SpiWriteReg(CC1101_SYNC0, sl);
 }
@@ -656,7 +656,7 @@ SpiWriteReg(CC1101_SYNC0, sl);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setAddr(byte v){
+void setAddr(byte v){
 SpiWriteReg(CC1101_ADDR, v);
 }
 /****************************************************************
@@ -665,7 +665,7 @@ SpiWriteReg(CC1101_ADDR, v);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setPQT(byte v){
+void setPQT(byte v){
 Split_PKTCTRL1();
 pc1PQT = 0;
 if (v>7){v=7;}
@@ -678,7 +678,7 @@ SpiWriteReg(CC1101_PKTCTRL1, pc1PQT+pc1CRC_AF+pc1APP_ST+pc1ADRCHK);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setCRC_AF(bool v){
+void setCRC_AF(bool v){
 Split_PKTCTRL1();
 pc1CRC_AF = 0;
 if (v==1){pc1CRC_AF=8;}
@@ -690,7 +690,7 @@ SpiWriteReg(CC1101_PKTCTRL1, pc1PQT+pc1CRC_AF+pc1APP_ST+pc1ADRCHK);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setAppendStatus(bool v){
+void setAppendStatus(bool v){
 Split_PKTCTRL1();
 pc1APP_ST = 0;
 if (v==1){pc1APP_ST=4;}
@@ -702,7 +702,7 @@ SpiWriteReg(CC1101_PKTCTRL1, pc1PQT+pc1CRC_AF+pc1APP_ST+pc1ADRCHK);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setAdrChk(byte v){
+void setAdrChk(byte v){
 Split_PKTCTRL1();
 pc1ADRCHK = 0;
 if (v>3){v=3;}
@@ -715,7 +715,7 @@ SpiWriteReg(CC1101_PKTCTRL1, pc1PQT+pc1CRC_AF+pc1APP_ST+pc1ADRCHK);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setWhiteData(bool v){
+void setWhiteData(bool v){
 Split_PKTCTRL0();
 pc0WDATA = 0;
 if (v == 1){pc0WDATA=64;}
@@ -727,7 +727,7 @@ SpiWriteReg(CC1101_PKTCTRL0, pc0WDATA+pc0PktForm+pc0CRC_EN+pc0LenConf);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setPktFormat(byte v){
+void setPktFormat(byte v){
 Split_PKTCTRL0();
 pc0PktForm = 0;
 if (v>3){v=3;}
@@ -740,7 +740,7 @@ SpiWriteReg(CC1101_PKTCTRL0, pc0WDATA+pc0PktForm+pc0CRC_EN+pc0LenConf);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setCrc(bool v){
+void setCrc(bool v){
 Split_PKTCTRL0();
 pc0CRC_EN = 0;
 if (v==1){pc0CRC_EN=4;}
@@ -752,7 +752,7 @@ SpiWriteReg(CC1101_PKTCTRL0, pc0WDATA+pc0PktForm+pc0CRC_EN+pc0LenConf);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setLengthConfig(byte v){
+void setLengthConfig(byte v){
 Split_PKTCTRL0();
 pc0LenConf = 0;
 if (v>3){v=3;}
@@ -765,7 +765,7 @@ SpiWriteReg(CC1101_PKTCTRL0, pc0WDATA+pc0PktForm+pc0CRC_EN+pc0LenConf);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setPacketLength(byte v){
+void setPacketLength(byte v){
 SpiWriteReg(CC1101_PKTLEN, v);
 }
 /****************************************************************
@@ -774,7 +774,7 @@ SpiWriteReg(CC1101_PKTLEN, v);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setDcFilterOff(bool v){
+void setDcFilterOff(bool v){
 Split_MDMCFG2();
 m2DCOFF = 0;
 if (v==1){m2DCOFF=128;}
@@ -786,7 +786,7 @@ SpiWriteReg(CC1101_MDMCFG2, m2DCOFF+m2MODFM+m2MANCH+m2SYNCM);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setManchester(bool v){
+void setManchester(bool v){
 Split_MDMCFG2();
 m2MANCH = 0;
 if (v==1){m2MANCH=8;}
@@ -798,7 +798,7 @@ SpiWriteReg(CC1101_MDMCFG2, m2DCOFF+m2MODFM+m2MANCH+m2SYNCM);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setSyncMode(byte v){
+void setSyncMode(byte v){
 Split_MDMCFG2();
 m2SYNCM = 0;
 if (v>7){v=7;}
@@ -811,7 +811,7 @@ SpiWriteReg(CC1101_MDMCFG2, m2DCOFF+m2MODFM+m2MANCH+m2SYNCM);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setFEC(bool v){
+void setFEC(bool v){
 Split_MDMCFG1();
 m1FEC=0;
 if (v==1){m1FEC=128;}
@@ -823,7 +823,7 @@ SpiWriteReg(CC1101_MDMCFG1, m1FEC+m1PRE+m1CHSP);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setPRE(byte v){
+void setPRE(byte v){
 Split_MDMCFG1();
 m1PRE=0;
 if (v>7){v=7;}
@@ -836,7 +836,7 @@ SpiWriteReg(CC1101_MDMCFG1, m1FEC+m1PRE+m1CHSP);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setChannel(byte ch){
+void setChannel(byte ch){
 chan = ch;
 SpiWriteReg(CC1101_CHANNR,   chan);
 }
@@ -846,7 +846,7 @@ SpiWriteReg(CC1101_CHANNR,   chan);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setChsp(float f){
+void setChsp(float f){
 Split_MDMCFG1();
 byte MDMCFG0 = 0;
 m1CHSP = 0;
@@ -874,7 +874,7 @@ SpiWriteReg(20,MDMCFG0);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setRxBW(float f){
+void setRxBW(float f){
 Split_MDMCFG4();
 int s1 = 3;
 int s2 = 3;
@@ -897,7 +897,7 @@ SpiWriteReg(16,m4RxBw+m4DaRa);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setDRate(float d){
+void setDRate(float d){
 Split_MDMCFG4();
 float c = d;
 byte MDMCFG3 = 0;
@@ -926,7 +926,7 @@ SpiWriteReg(17,  MDMCFG3);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setDeviation(float d){
+void setDeviation(float d){
 float f = 1.586914;
 float v = 0.19836425;
 int c = 0;
@@ -946,7 +946,7 @@ SpiWriteReg(21,c);
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::Split_PKTCTRL1(void){
+void Split_PKTCTRL1(void){
 int calc = SpiReadStatus(7);
 pc1PQT = 0;
 pc1CRC_AF = 0;
@@ -965,7 +965,7 @@ else {pc1ADRCHK = calc; i=1;}
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::Split_PKTCTRL0(void){
+void Split_PKTCTRL0(void){
 int calc = SpiReadStatus(8);
 pc0WDATA = 0;
 pc0PktForm = 0;
@@ -984,7 +984,7 @@ else {pc0LenConf = calc; i=1;}
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::Split_MDMCFG1(void){
+void Split_MDMCFG1(void){
 int calc = SpiReadStatus(19);
 m1FEC = 0;
 m1PRE = 0;
@@ -1002,7 +1002,7 @@ else {m1CHSP = calc; i=1;}
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::Split_MDMCFG2(void){
+void Split_MDMCFG2(void){
 int calc = SpiReadStatus(18);
 m2DCOFF = 0;
 m2MODFM = 0;
@@ -1021,7 +1021,7 @@ else{m2SYNCM = calc; i=1;}
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::Split_MDMCFG4(void){
+void Split_MDMCFG4(void){
 int calc = SpiReadStatus(16);
 m4RxBw = 0;
 m4DaRa = 0;
@@ -1037,7 +1037,7 @@ else{m4DaRa = calc; i=1;}
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::RegConfigSettings(void) 
+void RegConfigSettings(void) 
 {   
     SpiWriteReg(CC1101_FSCTRL1,  0x06);
     
@@ -1073,7 +1073,7 @@ void ELECHOUSE_CC1101::RegConfigSettings(void)
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::SetTx(void)
+void SetTx(void)
 {
   SpiStrobe(CC1101_SIDLE);
   SpiStrobe(CC1101_STX);        //start send
@@ -1085,7 +1085,7 @@ void ELECHOUSE_CC1101::SetTx(void)
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::SetRx(void)
+void SetRx(void)
 {
   SpiStrobe(CC1101_SIDLE);
   SpiStrobe(CC1101_SRX);        //start receive
@@ -1097,33 +1097,33 @@ void ELECHOUSE_CC1101::SetRx(void)
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::SetTx(float mhz)
-{
-  SpiStrobe(CC1101_SIDLE);
-  setMHZ(mhz);
-  SpiStrobe(CC1101_STX);        //start send
-  trxstate=1;
-}
+// void SetTx(float mhz)
+// {
+//   SpiStrobe(CC1101_SIDLE);
+//   setMHZ(mhz);
+//   SpiStrobe(CC1101_STX);        //start send
+//   trxstate=1;
+// }
 /****************************************************************
 *FUNCTION NAME:SetRx
 *FUNCTION     :set CC1101 to receive state and change frequency
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::SetRx(float mhz)
-{
-  SpiStrobe(CC1101_SIDLE);
-  setMHZ(mhz);
-  SpiStrobe(CC1101_SRX);        //start receive
-  trxstate=2;
-}
+// void SetRx(float mhz)
+// {
+//   SpiStrobe(CC1101_SIDLE);
+//   setMHZ(mhz);
+//   SpiStrobe(CC1101_SRX);        //start receive
+//   trxstate=2;
+// }
 /****************************************************************
 *FUNCTION NAME:RSSI Level
 *FUNCTION     :Calculating the RSSI Level
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-int ELECHOUSE_CC1101::getRssi(void)
+int getRssi(void)
 {
 int rssi;
 rssi=SpiReadStatus(CC1101_RSSI);
@@ -1137,7 +1137,7 @@ return rssi;
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-byte ELECHOUSE_CC1101::getLqi(void)
+byte getLqi(void)
 {
 byte lqi;
 lqi=SpiReadStatus(CC1101_LQI);
@@ -1149,7 +1149,7 @@ return lqi;
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setSres(void)
+void setSres(void)
 {
   SpiStrobe(CC1101_SRES);
   trxstate=0;
@@ -1160,7 +1160,7 @@ void ELECHOUSE_CC1101::setSres(void)
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::setSidle(void)
+void setSidle(void)
 {
   SpiStrobe(CC1101_SIDLE);
   trxstate=0;
@@ -1171,7 +1171,7 @@ void ELECHOUSE_CC1101::setSidle(void)
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::goSleep(void){
+void goSleep(void){
   trxstate=0;
   SpiStrobe(0x36);//Exit RX / TX, turn off frequency synthesizer and exit
   SpiStrobe(0x39);//Enter power down mode when CSn goes high.
@@ -1182,7 +1182,7 @@ void ELECHOUSE_CC1101::goSleep(void){
 *INPUT        :txBuffer: data array to send; size: number of data to send, no more than 61
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::SendData(char *txchar)
+void SendData1(char *txchar)
 {
 int len = strlen(txchar);
 byte chartobyte[len];
@@ -1195,7 +1195,7 @@ SendData(chartobyte,len);
 *INPUT        :txBuffer: data array to send; size: number of data to send, no more than 61
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::SendData(byte *txBuffer,byte size)
+void SendData(byte *txBuffer,byte size)
 {
   SpiWriteReg(CC1101_TXFIFO,size);
   SpiWriteBurstReg(CC1101_TXFIFO,txBuffer,size);      //write data to send
@@ -1212,12 +1212,12 @@ void ELECHOUSE_CC1101::SendData(byte *txBuffer,byte size)
 *INPUT        :txBuffer: data array to send; size: number of data to send, no more than 61
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::SendData(char *txchar,int t)
+void SendData3(char *txchar,int t)
 {
 int len = strlen(txchar);
 byte chartobyte[len];
 for (int i = 0; i<len; i++){chartobyte[i] = txchar[i];}
-SendData(chartobyte,len,t);
+SendData2(chartobyte,len,t);
 }
 /****************************************************************
 *FUNCTION NAME:SendData
@@ -1225,7 +1225,7 @@ SendData(chartobyte,len,t);
 *INPUT        :txBuffer: data array to send; size: number of data to send, no more than 61
 *OUTPUT       :none
 ****************************************************************/
-void ELECHOUSE_CC1101::SendData(byte *txBuffer,byte size,int t)
+void SendData2(byte *txBuffer,byte size,int t)
 {
   SpiWriteReg(CC1101_TXFIFO,size);
   SpiWriteBurstReg(CC1101_TXFIFO,txBuffer,size);      //write data to send
@@ -1241,7 +1241,7 @@ void ELECHOUSE_CC1101::SendData(byte *txBuffer,byte size,int t)
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-bool ELECHOUSE_CC1101::CheckCRC(void){
+bool CheckCRC(void){
 byte lqi=SpiReadStatus(CC1101_LQI);
 bool crc_ok = bitRead(lqi,7);
 if (crc_ok == 1){
@@ -1258,7 +1258,7 @@ return 0;
 *INPUT        :none
 *OUTPUT       :flag: 0 no data; 1 receive data 
 ****************************************************************/
-bool ELECHOUSE_CC1101::CheckRxFifo(int t){
+bool CheckRxFifo(int t){
 if(trxstate!=2){SetRx();}
 if(SpiReadStatus(CC1101_RXBYTES) & BYTES_IN_RXFIFO){
 vTaskDelay(t/portTICK_PERIOD_MS);
@@ -1273,7 +1273,7 @@ return 0;
 *INPUT        :none
 *OUTPUT       :flag: 0 no data; 1 receive data 
 ****************************************************************/
-byte ELECHOUSE_CC1101::CheckReceiveFlag(void)
+byte CheckReceiveFlag(void)
 {
   if(trxstate!=2){SetRx();}
 	if(digitalRead(GDO0))			//receive data
@@ -1292,7 +1292,7 @@ byte ELECHOUSE_CC1101::CheckReceiveFlag(void)
 *INPUT        :rxBuffer: buffer to store data
 *OUTPUT       :size of data received
 ****************************************************************/
-byte ELECHOUSE_CC1101::ReceiveData(byte *rxBuffer)
+byte ReceiveData(byte *rxBuffer)
 {
 	byte size;
 	byte status[2];
@@ -1317,12 +1317,12 @@ byte ELECHOUSE_CC1101::ReceiveData(byte *rxBuffer)
 	}
 }
 
-byte ELECHOUSE_CC1101::getVersion(void)
+byte getVersion(void)
 {
 	return SpiReadStatus(0x31);
 }
 
-byte ELECHOUSE_CC1101::getPartnum(void)
+byte getPartnum(void)
 {
 	return SpiReadStatus(0x30);
 }
@@ -1345,26 +1345,26 @@ byte ELECHOUSE_CC1101::getPartnum(void)
 // return ESP_OK;
 // }
 
-esp_err_t ELECHOUSE_CC1101::setup(){
-  esp_err_t ret=ELECHOUSE_cc1101.Init(); // initialize the cc1101
+esp_err_t setup(){
+  esp_err_t ret=Init(); // initialize the cc1101
   if(ret!=ESP_OK)
   return ESP_FAIL;
 
   int pin=9;
-  ELECHOUSE_cc1101.setSpiPin(13, 11, 12, 14); // Set custom pins: (SCK, MISO, MOSI, CSN). Must be BEFORE Init()!
-  ELECHOUSE_cc1101.setGDO(10, 9); // Set custom GDO pins: (GDO0, GDO2). Gdo0 (tx) and Gdo2 (rx). Must be BEFORE Init();
+  setSpiPin(13, 11, 12, 14); // Set custom pins: (SCK, MISO, MOSI, CSN). Must be BEFORE Init()!
+  setGDO(10, 9); // Set custom GDO pins: (GDO0, GDO2). Gdo0 (tx) and Gdo2 (rx). Must be BEFORE Init();
  
   //ELECHOUSE_cc1101.setRxBW(812.50);  // Set the Receive Bandwidth in kHz. Value from 58.03 to 812.50. Default is 812.50 kHz.
   //ELECHOUSE_cc1101.setPA(10); // set TxPower. The following settings are possible depending on the frequency band. Possible values: (-30, -20, -15, -10, -6, 0, 5, 7, 10, 11, 12). Default is max!
-  ELECHOUSE_cc1101.setMHZ(433.92); // Set basic frequency. The lib calculates the frequency automatically (default: 433.92). CC1101 can: 300-348 MHZ, 387-464MHZ and 779-928MHZ. Read More info from datasheet.
+  setMHZ(433.92); // Set basic frequency. The lib calculates the frequency automatically (default: 433.92). CC1101 can: 300-348 MHZ, 387-464MHZ and 779-928MHZ. Read More info from datasheet.
   
-  mySwitch.enableReceive(pin);  // Receiver on interrupt 0
+//   mySwitch.enableReceive(pin);  // Receiver on interrupt 0
 
 
-  ELECHOUSE_cc1101.SetRx();  // set Receive on
+  SetRx();  // set Receive on
   ESP_LOGI(TAG,"RX MODE");
   // Check the CC1101 Spi connection.
-  if (ELECHOUSE_cc1101.getCC1101()) { 
+  if (getCC1101()) { 
    ESP_LOGI(TAG,"CC1101: Connection OK.");
   }
   else {
@@ -1373,20 +1373,20 @@ esp_err_t ELECHOUSE_CC1101::setup(){
   return ESP_OK;
 }
 
-void ELECHOUSE_CC1101::Transmitting(unsigned long t_code){
-  mySwitch.enableTransmit(10);
+void Transmitting(unsigned long t_code){
+//   mySwitch.enableTransmit(10);
 
   // cc1101 set Transmit on
-  ELECHOUSE_cc1101.SetTx();
+  SetTx();
 
-  mySwitch.send(t_code, 24);
+//   mySwitch.send(t_code, 24);
   
 
-  ELECHOUSE_cc1101.SetRx();  // set Receive on
+  SetRx();  // set Receive on
 }
 
 
-ELECHOUSE_CC1101 ELECHOUSE_cc1101;
+// ELECHOUSE_CC1101 ELECHOUSE_cc1101;
 esp_err_t spi_init() {
 	 esp_err_t ret = ESP_OK;
 	gpio_reset_pin((gpio_num_t)SS_PIN);

@@ -121,14 +121,10 @@ typedef uint8_t byte;
 //************************************* class **************************************************//
 
 #define delay(ms) vTaskDelay(ms/ portTICK_PERIOD_MS)
-// typedef struct receivedData
+
+// class ELECHOUSE_CC1101
 // {
-//    uint16_t rv;
-//    uint8_t rbl;
-// }receivedData_t;
-class ELECHOUSE_CC1101
-{
-private:
+// private:
   esp_err_t SpiStart(void);
   void SpiEnd(void);
   void GDO_Set (void);
@@ -142,7 +138,7 @@ private:
   void Split_MDMCFG1(void);
   void Split_MDMCFG2(void);
   void Split_MDMCFG4(void);
-public:
+// public:
   esp_err_t Init(void);
   byte SpiReadStatus(byte addr);
   void setSpiPin(byte sck, byte miso, byte mosi, byte ss);
@@ -163,17 +159,17 @@ public:
   void setDeviation(float d);
   void SetTx(void);
   void SetRx(void);
-  void SetTx(float mhz);
-  void SetRx(float mhz);
+  // void SetTx(float mhz);
+  // void SetRx(float mhz);
    int getRssi(void);
   byte getLqi(void);
   void setSres(void);
   void setSidle(void);
   void goSleep(void);
   void SendData(byte *txBuffer, byte size);
-  void SendData(char *txchar);
-  void SendData(byte *txBuffer, byte size, int t);
-  void SendData(char *txchar, int t);
+  void SendData1(char *txchar);
+  void SendData2(byte *txBuffer, byte size, int t);
+  void SendData3(char *txchar, int t);
   byte CheckReceiveFlag(void);
   byte ReceiveData(byte *rxBuffer);
   bool CheckCRC(void);
@@ -208,11 +204,11 @@ public:
   // esp_err_t getData(receivedData_t* );
   esp_err_t setup();
   void Transmitting(unsigned long);
-};
+// };
 
 esp_err_t spi_init();
 uint8_t spi_transfer(uint8_t );
 
-extern ELECHOUSE_CC1101 ELECHOUSE_cc1101;
+// extern ELECHOUSE_CC1101 ELECHOUSE_cc1101;
 
 #endif
