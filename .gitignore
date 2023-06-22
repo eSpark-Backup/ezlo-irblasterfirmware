@@ -1,2 +1,5 @@
-
+.vscode/
+.devcontainer
+build/
+dependencies.lock
 *.bin
