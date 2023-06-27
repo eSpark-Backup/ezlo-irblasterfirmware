@@ -39,7 +39,16 @@
 #include "freertos/task.h"
 // #include "functional.h"
 typedef uint8_t byte;
-Variables variable;
+Variables var = {
+  .nReceivedValue = 0,
+  .nReceivedValue = 0,
+  .nReceivedBitlength = 0,
+  .nReceivedDelay = 0,
+  .nReceivedProtocol = 0,
+  .nReceiveTolerance = 60,
+  .nSeparationLimit = 4300,
+  // .timings[RCSWITCH_MAX_CHANGES];
+};
 static void gpio_interrupt_handler(void* args);
 #define HIGH 1
 #define LOW 0
@@ -131,40 +140,40 @@ enum {
 };
 
 
-volatile unsigned long variable.nReceivedValue = 0;
-volatile unsigned int variable.nReceivedBitlength = 0;
-volatile unsigned int variable.nReceivedDelay = 0;
-volatile unsigned int variable.nReceivedProtocol = 0;
-int variable.nReceiveTolerance = 60;
-const unsigned int VAR_ISR_ATTR variable.nSeparationLimit = 4300;
+// var.nReceivedValue = 0;
+// var.nReceivedBitlength = 0;
+// var.nReceivedDelay = 0;
+// var.nReceivedProtocol = 0;
+// var.nReceiveTolerance = 60;
+// var.nSeparationLimit = 4300;
 // separationLimit: minimum microseconds between received codes, closer codes are ignored.
 // according to discussion on issue #14 it might be more suitable to set the separation
 // limit to the same time as the 'low' part of the sync signal for the current protocol.
-unsigned int variable.timings[RCSWITCH_MAX_CHANGES];
+// var.timings[RCSWITCH_MAX_CHANGES];
 
 
 void RCSwitchInit(Variables* obj) {
   obj->nTransmitterPin = -1;
-  obj->setRepeatTransmit(10);
-  obj->setProtocol(1);
+  setRepeatTransmit(10,obj);
+  setProtocolInt(1,obj);
 
   obj->nReceiverInterrupt = -1;
-  obj->setReceiveTolerance(60);
-  nReceivedValue = 0;
+  setReceiveTolerance(60,obj);
+  obj->nReceivedValue = 0;
  
 }
 
 /**
   * Sets the protocol to send.
   */
-void setProtocol(Protocol protocol) {
+void setProtocol(Protocol protocol,Variables* this) {
   this->protocol = protocol;
 }
 
 /**
   * Sets the protocol to send, from a list of predefined protocols
   */
-void setProtocol(int nProtocol) {
+void setProtocolInt(int nProtocol,Variables* this) {
   if (nProtocol < 1 || nProtocol > numProto) {
     nProtocol = 1;  // TODO: trigger an error, e.g. "bad protocol" ???
   }
@@ -178,23 +187,23 @@ void setProtocol(int nProtocol) {
 /**
   * Sets the protocol to send with pulse length in microseconds.
   */
-void setProtocol(int nProtocol, int nPulseLength) {
-  setProtocol(nProtocol);
-  this->setPulseLength(nPulseLength);
+void setProtocolPulse(int nProtocol, int nPulseLength,Variables* this) {
+  setProtocolInt(nProtocol,this);
+  setPulseLength(nPulseLength,this);
 }
 
 
 /**
   * Sets pulse length in microseconds
   */
-void setPulseLength(int nPulseLength) {
+void setPulseLength(int nPulseLength,Variables* this) {
   this->protocol.pulseLength = nPulseLength;
 }
 
 /**
  * Sets Repeat Transmits
  */
-void setRepeatTransmit(int nRepeatTransmit) {
+void setRepeatTransmit(int nRepeatTransmit,Variables* this) {
   this->nRepeatTransmit = nRepeatTransmit;
 }
 
@@ -202,8 +211,8 @@ void setRepeatTransmit(int nRepeatTransmit) {
  * Set Receiving Tolerance
  */
 
-void setReceiveTolerance(int nPercent) {
-  nReceiveTolerance = nPercent;
+void setReceiveTolerance(int nPercent,Variables* obj) {
+  obj->nReceiveTolerance = nPercent;
 }
 
   
@@ -213,7 +222,7 @@ void setReceiveTolerance(int nPercent) {
  *
  * @param nTransmitterPin    Arduino Pin to which the sender is connected to
  */
-void enableTransmit(int nTransmitterPin) {
+void enableTransmit(int nTransmitterPin,Variables* this) {
   this->nTransmitterPin = nTransmitterPin;
   pinMode(this->nTransmitterPin, OUTPUT);
 }
@@ -221,7 +230,7 @@ void enableTransmit(int nTransmitterPin) {
 /**
   * Disable transmissions
   */
-void disableTransmit() {
+void disableTransmit(Variables* this) {
   this->nTransmitterPin = -1;
 }
 
@@ -231,105 +240,105 @@ void disableTransmit() {
  * @param sGroup        Code of the switch group (A,B,C,D)
  * @param nDevice       Number of the switch itself (1..3)
  */
-void switchOn(char sGroup, int nDevice) {
-  this->sendTriState( this->getCodeWordD(sGroup, nDevice, true) );
-}
+// void switchOn(char sGroup, int nDevice) {
+//   this->sendTriState( this->getCodeWordD(sGroup, nDevice, true) );
+// }
 
-/**
- * Switch a remote switch off (Type D REV)
- *
- * @param sGroup        Code of the switch group (A,B,C,D)
- * @param nDevice       Number of the switch itself (1..3)
- */
-void switchOff(char sGroup, int nDevice) {
-  this->sendTriState( this->getCodeWordD(sGroup, nDevice, false) );
-}
+// /**
+//  * Switch a remote switch off (Type D REV)
+//  *
+//  * @param sGroup        Code of the switch group (A,B,C,D)
+//  * @param nDevice       Number of the switch itself (1..3)
+//  */
+// void switchOff(char sGroup, int nDevice) {
+//   this->sendTriState( this->getCodeWordD(sGroup, nDevice, false) );
+// }
 
-/**
- * Switch a remote switch on (Type C Intertechno)
- *
- * @param sFamily  Familycode (a..f)
- * @param nGroup   Number of group (1..4)
- * @param nDevice  Number of device (1..4)
-  */
-void switchOn(char sFamily, int nGroup, int nDevice) {
-  this->sendTriState( this->getCodeWordC(sFamily, nGroup, nDevice, true) );
-}
+// /**
+//  * Switch a remote switch on (Type C Intertechno)
+//  *
+//  * @param sFamily  Familycode (a..f)
+//  * @param nGroup   Number of group (1..4)
+//  * @param nDevice  Number of device (1..4)
+//   */
+// void switchOn(char sFamily, int nGroup, int nDevice) {
+//   this->sendTriState( this->getCodeWordC(sFamily, nGroup, nDevice, true) );
+// }
 
-/**
- * Switch a remote switch off (Type C Intertechno)
- *
- * @param sFamily  Familycode (a..f)
- * @param nGroup   Number of group (1..4)
- * @param nDevice  Number of device (1..4)
- */
-void switchOff(char sFamily, int nGroup, int nDevice) {
-  this->sendTriState( this->getCodeWordC(sFamily, nGroup, nDevice, false) );
-}
+// /**
+//  * Switch a remote switch off (Type C Intertechno)
+//  *
+//  * @param sFamily  Familycode (a..f)
+//  * @param nGroup   Number of group (1..4)
+//  * @param nDevice  Number of device (1..4)
+//  */
+// void switchOff(char sFamily, int nGroup, int nDevice) {
+//   this->sendTriState( this->getCodeWordC(sFamily, nGroup, nDevice, false) );
+// }
 
-/**
- * Switch a remote switch on (Type B with two rotary/sliding switches)
- *
- * @param nAddressCode  Number of the switch group (1..4)
- * @param nChannelCode  Number of the switch itself (1..4)
- */
-void switchOn(int nAddressCode, int nChannelCode) {
-  this->sendTriState( this->getCodeWordB(nAddressCode, nChannelCode, true) );
-}
+// /**
+//  * Switch a remote switch on (Type B with two rotary/sliding switches)
+//  *
+//  * @param nAddressCode  Number of the switch group (1..4)
+//  * @param nChannelCode  Number of the switch itself (1..4)
+//  */
+// void switchOn(int nAddressCode, int nChannelCode) {
+//   this->sendTriState( this->getCodeWordB(nAddressCode, nChannelCode, true) );
+// }
 
-/**
- * Switch a remote switch off (Type B with two rotary/sliding switches)
- *
- * @param nAddressCode  Number of the switch group (1..4)
- * @param nChannelCode  Number of the switch itself (1..4)
- */
-void switchOff(int nAddressCode, int nChannelCode) {
-  this->sendTriState( this->getCodeWordB(nAddressCode, nChannelCode, false) );
-}
+// /**
+//  * Switch a remote switch off (Type B with two rotary/sliding switches)
+//  *
+//  * @param nAddressCode  Number of the switch group (1..4)
+//  * @param nChannelCode  Number of the switch itself (1..4)
+//  */
+// void switchOff(int nAddressCode, int nChannelCode) {
+//   this->sendTriState( this->getCodeWordB(nAddressCode, nChannelCode, false) );
+// }
 
-/**
- * Deprecated, use switchOn(const char* sGroup, const char* sDevice) instead!
- * Switch a remote switch on (Type A with 10 pole DIP switches)
- *
- * @param sGroup        Code of the switch group (refers to DIP switches 1..5 where "1" = on and "0" = off, if all DIP switches are on it's "11111")
- * @param nChannelCode  Number of the switch itself (1..5)
- */
-void switchOn(const char* sGroup, int nChannel) {
-  const char* code[6] = { "00000", "10000", "01000", "00100", "00010", "00001" };
-  this->switchOn(sGroup, code[nChannel]);
-}
+// /**
+//  * Deprecated, use switchOn(const char* sGroup, const char* sDevice) instead!
+//  * Switch a remote switch on (Type A with 10 pole DIP switches)
+//  *
+//  * @param sGroup        Code of the switch group (refers to DIP switches 1..5 where "1" = on and "0" = off, if all DIP switches are on it's "11111")
+//  * @param nChannelCode  Number of the switch itself (1..5)
+//  */
+// void switchOn(const char* sGroup, int nChannel) {
+//   const char* code[6] = { "00000", "10000", "01000", "00100", "00010", "00001" };
+//   this->switchOn(sGroup, code[nChannel]);
+// }
 
-/**
- * Deprecated, use switchOff(const char* sGroup, const char* sDevice) instead!
- * Switch a remote switch off (Type A with 10 pole DIP switches)
- *
- * @param sGroup        Code of the switch group (refers to DIP switches 1..5 where "1" = on and "0" = off, if all DIP switches are on it's "11111")
- * @param nChannelCode  Number of the switch itself (1..5)
- */
-void switchOff(const char* sGroup, int nChannel) {
-  const char* code[6] = { "00000", "10000", "01000", "00100", "00010", "00001" };
-  this->switchOff(sGroup, code[nChannel]);
-}
+// /**
+//  * Deprecated, use switchOff(const char* sGroup, const char* sDevice) instead!
+//  * Switch a remote switch off (Type A with 10 pole DIP switches)
+//  *
+//  * @param sGroup        Code of the switch group (refers to DIP switches 1..5 where "1" = on and "0" = off, if all DIP switches are on it's "11111")
+//  * @param nChannelCode  Number of the switch itself (1..5)
+//  */
+// void switchOff(const char* sGroup, int nChannel) {
+//   const char* code[6] = { "00000", "10000", "01000", "00100", "00010", "00001" };
+//   this->switchOff(sGroup, code[nChannel]);
+// }
 
-/**
- * Switch a remote switch on (Type A with 10 pole DIP switches)
- *
- * @param sGroup        Code of the switch group (refers to DIP switches 1..5 where "1" = on and "0" = off, if all DIP switches are on it's "11111")
- * @param sDevice       Code of the switch device (refers to DIP switches 6..10 (A..E) where "1" = on and "0" = off, if all DIP switches are on it's "11111")
- */
-void switchOn(const char* sGroup, const char* sDevice) {
-  this->sendTriState( this->getCodeWordA(sGroup, sDevice, true) );
-}
+// /**
+//  * Switch a remote switch on (Type A with 10 pole DIP switches)
+//  *
+//  * @param sGroup        Code of the switch group (refers to DIP switches 1..5 where "1" = on and "0" = off, if all DIP switches are on it's "11111")
+//  * @param sDevice       Code of the switch device (refers to DIP switches 6..10 (A..E) where "1" = on and "0" = off, if all DIP switches are on it's "11111")
+//  */
+// void switchOn(const char* sGroup, const char* sDevice) {
+//   this->sendTriState( this->getCodeWordA(sGroup, sDevice, true) );
+// }
 
-/**
- * Switch a remote switch off (Type A with 10 pole DIP switches)
- *
- * @param sGroup        Code of the switch group (refers to DIP switches 1..5 where "1" = on and "0" = off, if all DIP switches are on it's "11111")
- * @param sDevice       Code of the switch device (refers to DIP switches 6..10 (A..E) where "1" = on and "0" = off, if all DIP switches are on it's "11111")
- */
-void switchOff(const char* sGroup, const char* sDevice) {
-  this->sendTriState( this->getCodeWordA(sGroup, sDevice, false) );
-}
+// /**
+//  * Switch a remote switch off (Type A with 10 pole DIP switches)
+//  *
+//  * @param sGroup        Code of the switch group (refers to DIP switches 1..5 where "1" = on and "0" = off, if all DIP switches are on it's "11111")
+//  * @param sDevice       Code of the switch device (refers to DIP switches 6..10 (A..E) where "1" = on and "0" = off, if all DIP switches are on it's "11111")
+//  */
+// void switchOff(const char* sGroup, const char* sDevice) {
+//   this->sendTriState( this->getCodeWordA(sGroup, sDevice, false) );
+// }
 
 
 /**
@@ -483,7 +492,7 @@ char* getCodeWordD(char sGroup, int nDevice, bool bStatus) {
 /**
  * @param sCodeWord   a tristate code word consisting of the letter 0, 1, F
  */
-void sendTriState(const char* sCodeWord) {
+void sendTriState(const char* sCodeWord,Variables* this) {
   // turn the tristate code word into the corresponding bit pattern, then send it
   unsigned long code = 0;
   unsigned int length = 0;
@@ -504,13 +513,13 @@ void sendTriState(const char* sCodeWord) {
     }
     length += 2;
   }
-  this->send(code, length);
+  sendC(code, length,this);
 }
 
 /**
  * @param sCodeWord   a binary code word consisting of the letter 0, 1
  */
-void sendB(const char* sCodeWord) {
+void sendB(const char* sCodeWord, Variables* this) {
   // turn the tristate code word into the corresponding bit pattern, then send it
   unsigned long code = 0;
   unsigned int length = 0;
@@ -520,7 +529,7 @@ void sendB(const char* sCodeWord) {
       code |= 1L;
     length++;
   }
-  this->send(code, length);
+  sendC(code, length,this);
 }
 
 /**
@@ -528,26 +537,26 @@ void sendB(const char* sCodeWord) {
  * bits are sent from MSB to LSB, i.e., first the bit at position length-1,
  * then the bit at position length-2, and so on, till finally the bit at position 0.
  */
-void sendC(unsigned long code, unsigned int length) {
+void sendC(unsigned long code, unsigned int length,Variables* this) {
   if (this->nTransmitterPin == -1)
     return;
 
 
   // make sure the receiver is disabled while we transmit
-  int nReceiverInterrupt_backup = nReceiverInterrupt;
+  int nReceiverInterrupt_backup = this->nReceiverInterrupt;
   if (nReceiverInterrupt_backup != -1) {
-    this->disableReceive();
+    disableReceive(this);
   }
 
 
-  for (int nRepeat = 0; nRepeat < nRepeatTransmit; nRepeat++) {
+  for (int nRepeat = 0; nRepeat < this->nRepeatTransmit; nRepeat++) {
     for (int i = length-1; i >= 0; i--) {
       if (code & (1L << i))
-        this->transmit(protocol.one);
+        transmit(protocol.one,this);
       else
-        this->transmit(protocol.zero);
+        transmit(protocol.zero,this);
     }
-    this->transmit(protocol.syncFactor);
+    transmit(protocol.syncFactor,this);
   }
 
   // Disable transmit after sending (i.e., for inverted protocols)
@@ -556,7 +565,7 @@ void sendC(unsigned long code, unsigned int length) {
 
   // enable receiver again if we just disabled it
   if (nReceiverInterrupt_backup != -1) {
-    this->enableReceive(nReceiverInterrupt_backup);
+    enableReceive(nReceiverInterrupt_backup,this);
   }
 
 }
@@ -564,7 +573,7 @@ void sendC(unsigned long code, unsigned int length) {
 /**
  * Transmit a single high-low pulse.
  */
-void transmit(HighLow pulses) {
+void transmit(HighLow pulses,Variables* this) {
   uint8_t firstLogicLevel = (this->protocol.invertedSignal) ? LOW : HIGH;
   uint8_t secondLogicLevel = (this->protocol.invertedSignal) ? HIGH : LOW;
   
@@ -579,16 +588,16 @@ void transmit(HighLow pulses) {
 /**
  * Enable receiving data
  */
-esp_err_t enableReceive(int interrupt) {
+esp_err_t enableReceive(int interrupt,Variables* this) {
   this->nReceiverInterrupt = interrupt;
-  this->enableReceive1();
+  enableReceive1(this);
   return ESP_OK;
 }
 
-void enableReceive1() {
+void enableReceive1(Variables* this) {
   if (this->nReceiverInterrupt != -1) {
-    nReceivedValue = 0;
-    nReceivedBitlength = 0;
+    this->nReceivedValue = 0;
+    this->nReceivedBitlength = 0;
 
    // attachInterrupt(this->nReceiverInterrupt, handleInterrupt, CHANGE);
     gpio_set_intr_type((gpio_num_t) (this->nReceiverInterrupt), GPIO_INTR_ANYEDGE);
@@ -601,41 +610,41 @@ void enableReceive1() {
 /**
  * Disable receiving data
  */
-void disableReceive() {
-#if not defined(RaspberryPi) // Arduino
+void disableReceive(Variables* this) {
+// #if not defined(RaspberryPi) // Arduino
   //detachInterrupt(this->nReceiverInterrupt);
   gpio_isr_handler_remove((gpio_num_t) (this->nReceiverInterrupt));
   gpio_uninstall_isr_service();
-#endif // For Raspberry Pi (wiringPi) you can't unregister the ISR
+// #endif // For Raspberry Pi (wiringPi) you can't unregister the ISR
   this->nReceiverInterrupt = -1;
 }
 
-bool available() {
-  return nReceivedValue != 0;
+bool available(Variables* this) {
+  return this->nReceivedValue != 0;
 }
 
-void resetAvailable() {
-  nReceivedValue = 0;
+void resetAvailable(Variables* this) {
+ this->nReceivedValue = 0;
 }
 
-unsigned long getReceivedValue() {
-  return nReceivedValue;
+unsigned long getReceivedValue(Variables* this) {
+  return this->nReceivedValue;
 }
 
-unsigned int getReceivedBitlength() {
-  return nReceivedBitlength;
+unsigned int getReceivedBitlength(Variables* this) {
+  return this->nReceivedBitlength;
 }
 
-unsigned int getReceivedDelay() {
-  return nReceivedDelay;
+unsigned int getReceivedDelay(Variables* this) {
+  return this->nReceivedDelay;
 }
 
-unsigned int getReceivedProtocol() {
-  return nReceivedProtocol;
+unsigned int getReceivedProtocol(Variables* this) {
+  return this->nReceivedProtocol;
 }
 
-unsigned int* getReceivedRawdata() {
-  return timings;
+int* getReceivedRawdata(Variables* this) {
+  return this->timings;
 }
 
 /* helper function for the receiveProtocol method */
@@ -646,7 +655,7 @@ static inline unsigned int diff(int A, int B) {
 /**
  *
  */
-bool RECEIVE_ATTR receiveProtocol(const int p, unsigned int changeCount) {
+bool RECEIVE_ATTR receiveProtocol(const int p, unsigned int changeCount,Variables* this) {
 #if defined(ESP8266) || defined(ESP32)
     const Protocol &pro = proto[p-1];
 #else
@@ -657,8 +666,8 @@ bool RECEIVE_ATTR receiveProtocol(const int p, unsigned int changeCount) {
     unsigned long code = 0;
     //Assuming the longer pulse length is the pulse captured in timings[0]
     const unsigned int syncLengthInPulses =  ((pro.syncFactor.low) > (pro.syncFactor.high)) ? (pro.syncFactor.low) : (pro.syncFactor.high);
-    const unsigned int delay = timings[0] / syncLengthInPulses;
-    const unsigned int delayTolerance = delay * nReceiveTolerance / 100;
+    const unsigned int delay = this->timings[0] / syncLengthInPulses;
+    const unsigned int delayTolerance = delay * this->nReceiveTolerance / 100;
     
     /* For protocols that start low, the sync period looks like
      *               _________
@@ -681,11 +690,11 @@ bool RECEIVE_ATTR receiveProtocol(const int p, unsigned int changeCount) {
 
     for (unsigned int i = firstDataTiming; i < changeCount - 1; i += 2) {
         code <<= 1;
-        if (diff(timings[i], delay * pro.zero.high) < delayTolerance &&
-            diff(timings[i + 1], delay * pro.zero.low) < delayTolerance) {
+        if (diff(this->timings[i], delay * pro.zero.high) < delayTolerance &&
+            diff(this->timings[i + 1], delay * pro.zero.low) < delayTolerance) {
             // zero
-        } else if (diff(timings[i], delay * pro.one.high) < delayTolerance &&
-                   diff(timings[i + 1], delay * pro.one.low) < delayTolerance) {
+        } else if (diff(this->timings[i], delay * pro.one.high) < delayTolerance &&
+                   diff(this->timings[i + 1], delay * pro.one.low) < delayTolerance) {
             // one
             code |= 1;
         } else {
@@ -695,17 +704,17 @@ bool RECEIVE_ATTR receiveProtocol(const int p, unsigned int changeCount) {
     }
 
     if (changeCount > 7) {    // ignore very short transmissions: no device sends them, so this must be noise
-       nReceivedValue = code;
-       nReceivedBitlength = (changeCount - 1) / 2;
-       nReceivedDelay = delay;
-       nReceivedProtocol = p;
+       this->nReceivedValue = code;
+       this->nReceivedBitlength = (changeCount - 1) / 2;
+       this->nReceivedDelay = delay;
+       this->nReceivedProtocol = p;
         return true;
     }
 
     return false;
 }
 
-void RECEIVE_ATTR handleInterrupt() {
+void RECEIVE_ATTR handleInterrupt(Variables* this) {
 
   static unsigned int changeCount = 0;
   static unsigned long lastTime = 0;
@@ -714,10 +723,10 @@ void RECEIVE_ATTR handleInterrupt() {
   const long time = micros();
   const unsigned int duration = time - lastTime;
 
-  if (duration > nSeparationLimit) {
+  if (duration > this->nSeparationLimit) {
     // A long stretch without signal level change occurred. This could
     // be the gap between two transmission.
-    if ((repeatCount==0) || (diff(duration, timings[0]) < 200)) {
+    if ((repeatCount==0) || (diff(duration, this->timings[0]) < 200)) {
       // This long signal is close in length to the long signal which
       // started the previously recorded timings; this suggests that
       // it may indeed by a a gap between two transmissions (we assume
@@ -726,7 +735,7 @@ void RECEIVE_ATTR handleInterrupt() {
       repeatCount++;
       if (repeatCount == 2) {
         for(unsigned int i = 1; i <= numProto; i++) {
-          if (receiveProtocol(i, changeCount)) {
+          if (receiveProtocol(i, changeCount,this)) {
             // receive succeeded for protocol i
             break;
           }
@@ -743,7 +752,7 @@ void RECEIVE_ATTR handleInterrupt() {
     repeatCount = 0;
   }
 
-  timings[changeCount++] = duration;
+  this->timings[changeCount++] = duration;
   lastTime = time;  
 }
 #endif
@@ -752,6 +761,7 @@ void RECEIVE_ATTR handleInterrupt() {
 static void IRAM_ATTR gpio_interrupt_handler(void *args)
 {
   
-  RCSwitch *rcswitch=(RCSwitch*) args;
-   rcswitch->handleInterrupt();
+  // RCSwitch *rcswitch=(RCSwitch*) args;
+  Variables* obj = (Variables*)args; 
+   handleInterrupt(obj);
 }

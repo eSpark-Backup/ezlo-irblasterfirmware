@@ -54,66 +54,16 @@ static inline long map(long x, long in_min, long in_max, long out_min, long out_
 static inline bool bitRead(uint8_t x,uint8_t y ){
     return ((x >> y) & 0x01);
 }
+typedef struct HighLow {
+  uint8_t high;
+  uint8_t low;
+  }HighLow;
 
 #define micros() esp_timer_get_time()
 // Number of maximum high/Low changes per packet.
 // We can handle up to (unsigned long) => 32 bit * 2 H/L changes per bit + 2 for sync
 #define RCSWITCH_MAX_CHANGES 67
-
-// class RCSwitch {
-
-//   public:
-    void  RCSwitch();
-    static void handleInterrupt();
-    // void switchOn(int nGroupNumber, int nSwitchNumber);
-    // void switchOff(int nGroupNumber, int nSwitchNumber);
-    // void switchOn(const char* sGroup, int nSwitchNumber);
-    // void switchOff(const char* sGroup, int nSwitchNumber);
-    // void switchOn(char sFamily, int nGroup, int nDevice);
-    // void switchOff(char sFamily, int nGroup, int nDevice);
-    // void switchOn(const char* sGroup, const char* sDevice);
-    // void switchOff(const char* sGroup, const char* sDevice);
-    // void switchOn(char sGroup, int nDevice);
-    // void switchOff(char sGroup, int nDevice);
-
-    void sendTriState(const char* sCodeWord);
-    void sendC(unsigned long code, unsigned int length);
-    void sendB(const char* sCodeWord);
-    
-    
-    esp_err_t enableReceive(int interrupt);
-    void enableReceive1();
-    void disableReceive();
-    bool available();
-    void resetAvailable();
-
-    unsigned long getReceivedValue();
-    unsigned int getReceivedBitlength();
-    unsigned int getReceivedDelay();
-    unsigned int getReceivedProtocol();
-    unsigned int* getReceivedRawdata();
-   
-  
-    void enableTransmit(int nTransmitterPin);
-    void disableTransmit();
-    void setPulseLength(int nPulseLength);
-    void setRepeatTransmit(int nRepeatTransmit);
-    
-    void setReceiveTolerance(int nPercent);
-    
-
-    /**
-     * Description of a single pule, which consists of a high signal
-     * whose duration is "high" times the base pulse length, followed
-     * by a low signal lasting "low" times the base pulse length.
-     * Thus, the pulse overall lasts (high+low)*pulseLength
-     */
-    typedef struct HighLow {
-        uint8_t high;
-        uint8_t low;
-    }HighLow;
-
-    /**
+ /**
      * A "protocol" describes how zero and one bits are encoded into high/low
      * pulses.
      */
@@ -144,38 +94,92 @@ static inline bool bitRead(uint8_t x,uint8_t y ){
         bool invertedSignal;
     }Protocol;
 
-    void setProtocol(Protocol protocol);
-    void setProtocol1(int nProtocol);
-    void setProtocol2(int nProtocol, int nPulseLength);
+typedef struct {
+  int nReceiverInterrupt;
+  int nTransmitterPin;
+  int nRepeatTransmit;
+  int nReceiveTolerance;
+  unsigned long nReceivedValue;
+  unsigned int nReceivedBitlength;
+  unsigned int nReceivedDelay;
+  unsigned int nReceivedProtocol;
+   int nSeparationLimit;
+  Protocol protocol;
+  /* 
+  * timings[0] contains sync timing, followed by a number of bits
+  */
+   int timings[RCSWITCH_MAX_CHANGES];
+  }Variables;
+// class RCSwitch {
+
+//   public:
+    void  RCSwitchInit(Variables* );
+    static void handleInterrupt();
+    // void switchOn(int nGroupNumber, int nSwitchNumber);
+    // void switchOff(int nGroupNumber, int nSwitchNumber);
+    // void switchOn(const char* sGroup, int nSwitchNumber);
+    // void switchOff(const char* sGroup, int nSwitchNumber);
+    // void switchOn(char sFamily, int nGroup, int nDevice);
+    // void switchOff(char sFamily, int nGroup, int nDevice);
+    // void switchOn(const char* sGroup, const char* sDevice);
+    // void switchOff(const char* sGroup, const char* sDevice);
+    // void switchOn(char sGroup, int nDevice);
+    // void switchOff(char sGroup, int nDevice);
+
+    void sendTriState(const char* sCodeWord,Variables* this);
+    void sendC(unsigned long code, unsigned int length,Variables* this);
+    void sendB(const char* sCodeWord,Variables* this);
+    
+    
+    esp_err_t enableReceive(int interrupt,Variables* );
+    void enableReceive1(Variables* );
+    void disableReceive(Variables* );
+    bool available();
+    void resetAvailable();
+
+    unsigned long getReceivedValue();
+    unsigned int getReceivedBitlength();
+    unsigned int getReceivedDelay();
+    unsigned int getReceivedProtocol();
+    int* getReceivedRawdata();
+   
+  
+    void enableTransmit(int nTransmitterPin,Variables* this);
+    void disableTransmit();
+    void setPulseLength(int nPulseLength,Variables* this);
+    void setRepeatTransmit(int nRepeatTransmit,Variables* this);
+    
+    void setReceiveTolerance(int nPercent,Variables*);
+    
+
+    /**
+     * Description of a single pule, which consists of a high signal
+     * whose duration is "high" times the base pulse length, followed
+     * by a low signal lasting "low" times the base pulse length.
+     * Thus, the pulse overall lasts (high+low)*pulseLength
+     */
+ 
+
+   
+
+    void setProtocol(Protocol protocol,Variables*);
+    void setProtocolInt(int nProtocol,Variables*);
+    void setProtocolPulse(int nProtocol, int nPulseLength,Variables*);
 
 
     char* getCodeWordA(const char* sGroup, const char* sDevice, bool bStatus);
     char* getCodeWordB(int nGroupNumber, int nSwitchNumber, bool bStatus);
     char* getCodeWordC(char sFamily, int nGroup, int nDevice, bool bStatus);
     char* getCodeWordD(char group, int nDevice, bool bStatus);
-    void transmit(HighLow pulses);
+    void transmit(HighLow pulses,Variables* );
 
   
     
-    static bool receiveProtocol(const int p, unsigned int changeCount);
+    static bool receiveProtocol(const int p, unsigned int changeCount,Variables*);
   
     
     Protocol protocol;
-  typedef struct Variables{
-      int nReceiverInterrupt;
-    int nTransmitterPin;
-    int nRepeatTransmit;
-    static int nReceiveTolerance;
-    volatile static unsigned long nReceivedValue;
-    volatile static unsigned int nReceivedBitlength;
-    volatile static unsigned int nReceivedDelay;
-    volatile static unsigned int nReceivedProtocol;
-    static unsigned int nSeparationLimit;
-    /* 
-     * timings[0] contains sync timing, followed by a number of bits
-     */
-    static unsigned int timings[RCSWITCH_MAX_CHANGES];
-    }Variables;
+
 
     
 // };
