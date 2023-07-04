@@ -114,7 +114,7 @@ typedef struct {
 
 //   public:
     void  RCSwitchInit(Variables* );
-    static void handleInterrupt();
+    void handleInterrupt(Variables* );
     // void switchOn(int nGroupNumber, int nSwitchNumber);
     // void switchOff(int nGroupNumber, int nSwitchNumber);
     // void switchOn(const char* sGroup, int nSwitchNumber);
@@ -175,7 +175,7 @@ typedef struct {
 
   
     
-    static bool receiveProtocol(const int p, unsigned int changeCount,Variables*);
+     bool receiveProtocol(const int p, unsigned int changeCount,Variables*);
   
     
     Protocol protocol;

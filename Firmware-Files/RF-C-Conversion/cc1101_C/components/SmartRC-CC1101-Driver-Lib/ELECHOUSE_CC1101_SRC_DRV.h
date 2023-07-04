@@ -202,8 +202,8 @@ typedef uint8_t byte;
   byte getVersion(void);
   void spiTransferWord(uint16_t );
   // esp_err_t getData(receivedData_t* );
-  esp_err_t setup();
-  void Transmitting(unsigned long);
+  // esp_err_t setup();
+  void Transmitting(unsigned long,Variables* this);
 // };
 
 esp_err_t spi_init();

@@ -1345,44 +1345,44 @@ byte getPartnum(void)
 // return ESP_OK;
 // }
 
-esp_err_t setup(){
-  esp_err_t ret=Init(); // initialize the cc1101
-  if(ret!=ESP_OK)
-  return ESP_FAIL;
+// esp_err_t setup(){
+//   esp_err_t ret=Init(); // initialize the cc1101
+//   if(ret!=ESP_OK)
+//   return ESP_FAIL;
 
-  int pin=9;
-  setSpiPin(13, 11, 12, 14); // Set custom pins: (SCK, MISO, MOSI, CSN). Must be BEFORE Init()!
-  setGDO(10, 9); // Set custom GDO pins: (GDO0, GDO2). Gdo0 (tx) and Gdo2 (rx). Must be BEFORE Init();
+//   int pin=9;
+//   setSpiPin(13, 11, 12, 14); // Set custom pins: (SCK, MISO, MOSI, CSN). Must be BEFORE Init()!
+//   setGDO(10, 9); // Set custom GDO pins: (GDO0, GDO2). Gdo0 (tx) and Gdo2 (rx). Must be BEFORE Init();
  
-  //ELECHOUSE_cc1101.setRxBW(812.50);  // Set the Receive Bandwidth in kHz. Value from 58.03 to 812.50. Default is 812.50 kHz.
-  //ELECHOUSE_cc1101.setPA(10); // set TxPower. The following settings are possible depending on the frequency band. Possible values: (-30, -20, -15, -10, -6, 0, 5, 7, 10, 11, 12). Default is max!
-  setMHZ(433.92); // Set basic frequency. The lib calculates the frequency automatically (default: 433.92). CC1101 can: 300-348 MHZ, 387-464MHZ and 779-928MHZ. Read More info from datasheet.
+//   //ELECHOUSE_cc1101.setRxBW(812.50);  // Set the Receive Bandwidth in kHz. Value from 58.03 to 812.50. Default is 812.50 kHz.
+//   //ELECHOUSE_cc1101.setPA(10); // set TxPower. The following settings are possible depending on the frequency band. Possible values: (-30, -20, -15, -10, -6, 0, 5, 7, 10, 11, 12). Default is max!
+//   setMHZ(433.92); // Set basic frequency. The lib calculates the frequency automatically (default: 433.92). CC1101 can: 300-348 MHZ, 387-464MHZ and 779-928MHZ. Read More info from datasheet.
   
-//   mySwitch.enableReceive(pin);  // Receiver on interrupt 0
+//   enableReceive(pin,);  // Receiver on interrupt 0
 
 
-  SetRx();  // set Receive on
-  ESP_LOGI(TAG,"RX MODE");
-  // Check the CC1101 Spi connection.
-  if (getCC1101()) { 
-   ESP_LOGI(TAG,"CC1101: Connection OK.");
-  }
-  else {
-   ESP_LOGI(TAG,"CC1101: Connection error.");
-  }
-  return ESP_OK;
-}
+//   SetRx();  // set Receive on
+//   ESP_LOGI(TAG,"RX MODE");
+//   // Check the CC1101 Spi connection.
+//   if (getCC1101()) { 
+//    ESP_LOGI(TAG,"CC1101: Connection OK.");
+//   }
+//   else {
+//    ESP_LOGI(TAG,"CC1101: Connection error.");
+//   }
+//   return ESP_OK;
+// }
 
-void Transmitting(unsigned long t_code){
-//   mySwitch.enableTransmit(10);
+void Transmitting(unsigned long t_code,Variables* this){
+  enableTransmit(10,this);
 
   // cc1101 set Transmit on
   SetTx();
 
-//   mySwitch.send(t_code, 24);
+  sendC(t_code, 24,this);
   
 
-  SetRx();  // set Receive on
+  //  SetRx();  // set Receive on
 }
 
 

@@ -39,16 +39,7 @@
 #include "freertos/task.h"
 // #include "functional.h"
 typedef uint8_t byte;
-Variables var = {
-  .nReceivedValue = 0,
-  .nReceivedValue = 0,
-  .nReceivedBitlength = 0,
-  .nReceivedDelay = 0,
-  .nReceivedProtocol = 0,
-  .nReceiveTolerance = 60,
-  .nSeparationLimit = 4300,
-  // .timings[RCSWITCH_MAX_CHANGES];
-};
+
 static void gpio_interrupt_handler(void* args);
 #define HIGH 1
 #define LOW 0
@@ -548,7 +539,7 @@ void sendC(unsigned long code, unsigned int length,Variables* this) {
     disableReceive(this);
   }
 
-
+  
   for (int nRepeat = 0; nRepeat < this->nRepeatTransmit; nRepeat++) {
     for (int i = length-1; i >= 0; i--) {
       if (code & (1L << i))
