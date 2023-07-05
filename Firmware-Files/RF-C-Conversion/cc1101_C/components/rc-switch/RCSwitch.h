@@ -115,16 +115,16 @@ typedef struct {
 //   public:
     void  RCSwitchInit(Variables* );
     void handleInterrupt(Variables* );
-    // void switchOn(int nGroupNumber, int nSwitchNumber);
-    // void switchOff(int nGroupNumber, int nSwitchNumber);
-    // void switchOn(const char* sGroup, int nSwitchNumber);
-    // void switchOff(const char* sGroup, int nSwitchNumber);
-    // void switchOn(char sFamily, int nGroup, int nDevice);
-    // void switchOff(char sFamily, int nGroup, int nDevice);
-    // void switchOn(const char* sGroup, const char* sDevice);
-    // void switchOff(const char* sGroup, const char* sDevice);
-    // void switchOn(char sGroup, int nDevice);
-    // void switchOff(char sGroup, int nDevice);
+    void switchOnAdd(int nGroupNumber, int nSwitchNumber,Variables* this);
+    void switchOffAdd(int nGroupNumber, int nSwitchNumber,Variables* this);
+    void switchOn(const char* sGroup, int nSwitchNumber,Variables* this);
+    void switchOff(const char* sGroup, int nSwitchNumber,Variables* this);
+    void switchOnF(char sFamily, int nGroup, int nDevice,Variables* this);
+    void switchOffF(char sFamily, int nGroup, int nDevice,Variables* this);
+    void switchOnA(const char* sGroup, const char* sDevice,Variables* this);
+    void switchOffA(const char* sGroup, const char* sDevice,Variables* this);
+    void switchOnD(char sGroup, int nDevice,Variables* this);
+    void switchOffD(char sGroup, int nDevice,Variables* this);
 
     void sendTriState(const char* sCodeWord,Variables* this);
     void sendC(unsigned long code, unsigned int length,Variables* this);
@@ -178,7 +178,7 @@ typedef struct {
      bool receiveProtocol(const int p, unsigned int changeCount,Variables*);
   
     
-    Protocol protocol;
+
 
 
     

@@ -231,9 +231,9 @@ void disableTransmit(Variables* this) {
  * @param sGroup        Code of the switch group (A,B,C,D)
  * @param nDevice       Number of the switch itself (1..3)
  */
-// void switchOn(char sGroup, int nDevice) {
-//   this->sendTriState( this->getCodeWordD(sGroup, nDevice, true) );
-// }
+void switchOnD(char sGroup, int nDevice,Variables* this) {
+  sendTriState( getCodeWordD(sGroup, nDevice, true) , this);
+}
 
 // /**
 //  * Switch a remote switch off (Type D REV)
@@ -241,9 +241,9 @@ void disableTransmit(Variables* this) {
 //  * @param sGroup        Code of the switch group (A,B,C,D)
 //  * @param nDevice       Number of the switch itself (1..3)
 //  */
-// void switchOff(char sGroup, int nDevice) {
-//   this->sendTriState( this->getCodeWordD(sGroup, nDevice, false) );
-// }
+void switchOffD(char sGroup, int nDevice,Variables* this) {
+  sendTriState( getCodeWordD(sGroup, nDevice, false), this );
+}
 
 // /**
 //  * Switch a remote switch on (Type C Intertechno)
@@ -252,9 +252,9 @@ void disableTransmit(Variables* this) {
 //  * @param nGroup   Number of group (1..4)
 //  * @param nDevice  Number of device (1..4)
 //   */
-// void switchOn(char sFamily, int nGroup, int nDevice) {
-//   this->sendTriState( this->getCodeWordC(sFamily, nGroup, nDevice, true) );
-// }
+void switchOnF(char sFamily, int nGroup, int nDevice,Variables* this) {
+  sendTriState( getCodeWordC(sFamily, nGroup, nDevice, true) , this);
+}
 
 // /**
 //  * Switch a remote switch off (Type C Intertechno)
@@ -263,9 +263,9 @@ void disableTransmit(Variables* this) {
 //  * @param nGroup   Number of group (1..4)
 //  * @param nDevice  Number of device (1..4)
 //  */
-// void switchOff(char sFamily, int nGroup, int nDevice) {
-//   this->sendTriState( this->getCodeWordC(sFamily, nGroup, nDevice, false) );
-// }
+void switchOffF(char sFamily, int nGroup, int nDevice,Variables* this) {
+  sendTriState( getCodeWordC(sFamily, nGroup, nDevice, false), this );
+}
 
 // /**
 //  * Switch a remote switch on (Type B with two rotary/sliding switches)
@@ -273,9 +273,9 @@ void disableTransmit(Variables* this) {
 //  * @param nAddressCode  Number of the switch group (1..4)
 //  * @param nChannelCode  Number of the switch itself (1..4)
 //  */
-// void switchOn(int nAddressCode, int nChannelCode) {
-//   this->sendTriState( this->getCodeWordB(nAddressCode, nChannelCode, true) );
-// }
+void switchOnAdd(int nAddressCode, int nChannelCode,Variables* this) {
+  sendTriState( getCodeWordB(nAddressCode, nChannelCode, true) , this);
+}
 
 // /**
 //  * Switch a remote switch off (Type B with two rotary/sliding switches)
@@ -283,9 +283,9 @@ void disableTransmit(Variables* this) {
 //  * @param nAddressCode  Number of the switch group (1..4)
 //  * @param nChannelCode  Number of the switch itself (1..4)
 //  */
-// void switchOff(int nAddressCode, int nChannelCode) {
-//   this->sendTriState( this->getCodeWordB(nAddressCode, nChannelCode, false) );
-// }
+void switchOffAdd(int nAddressCode, int nChannelCode,Variables* this) {
+  sendTriState( getCodeWordB(nAddressCode, nChannelCode, false), this );
+}
 
 // /**
 //  * Deprecated, use switchOn(const char* sGroup, const char* sDevice) instead!
@@ -294,10 +294,10 @@ void disableTransmit(Variables* this) {
 //  * @param sGroup        Code of the switch group (refers to DIP switches 1..5 where "1" = on and "0" = off, if all DIP switches are on it's "11111")
 //  * @param nChannelCode  Number of the switch itself (1..5)
 //  */
-// void switchOn(const char* sGroup, int nChannel) {
-//   const char* code[6] = { "00000", "10000", "01000", "00100", "00010", "00001" };
-//   this->switchOn(sGroup, code[nChannel]);
-// }
+void switchOn(const char* sGroup, int nChannel,Variables* this) {
+  const char* code[6] = { "00000", "10000", "01000", "00100", "00010", "00001" };
+  switchOn(sGroup, code[nChannel], this);
+}
 
 // /**
 //  * Deprecated, use switchOff(const char* sGroup, const char* sDevice) instead!
@@ -306,10 +306,10 @@ void disableTransmit(Variables* this) {
 //  * @param sGroup        Code of the switch group (refers to DIP switches 1..5 where "1" = on and "0" = off, if all DIP switches are on it's "11111")
 //  * @param nChannelCode  Number of the switch itself (1..5)
 //  */
-// void switchOff(const char* sGroup, int nChannel) {
-//   const char* code[6] = { "00000", "10000", "01000", "00100", "00010", "00001" };
-//   this->switchOff(sGroup, code[nChannel]);
-// }
+void switchOff(const char* sGroup, int nChannel,Variables* this) {
+  const char* code[6] = { "00000", "10000", "01000", "00100", "00010", "00001" };
+  switchOff(sGroup, code[nChannel], this);
+}
 
 // /**
 //  * Switch a remote switch on (Type A with 10 pole DIP switches)
@@ -317,9 +317,9 @@ void disableTransmit(Variables* this) {
 //  * @param sGroup        Code of the switch group (refers to DIP switches 1..5 where "1" = on and "0" = off, if all DIP switches are on it's "11111")
 //  * @param sDevice       Code of the switch device (refers to DIP switches 6..10 (A..E) where "1" = on and "0" = off, if all DIP switches are on it's "11111")
 //  */
-// void switchOn(const char* sGroup, const char* sDevice) {
-//   this->sendTriState( this->getCodeWordA(sGroup, sDevice, true) );
-// }
+void switchOnA(const char* sGroup, const char* sDevice,Variables* this) {
+  sendTriState( getCodeWordA(sGroup, sDevice, true) , this);
+}
 
 // /**
 //  * Switch a remote switch off (Type A with 10 pole DIP switches)
@@ -327,9 +327,9 @@ void disableTransmit(Variables* this) {
 //  * @param sGroup        Code of the switch group (refers to DIP switches 1..5 where "1" = on and "0" = off, if all DIP switches are on it's "11111")
 //  * @param sDevice       Code of the switch device (refers to DIP switches 6..10 (A..E) where "1" = on and "0" = off, if all DIP switches are on it's "11111")
 //  */
-// void switchOff(const char* sGroup, const char* sDevice) {
-//   this->sendTriState( this->getCodeWordA(sGroup, sDevice, false) );
-// }
+void switchOffA(const char* sGroup, const char* sDevice,Variables* this) {
+  sendTriState( getCodeWordA(sGroup, sDevice, false), this );
+}
 
 
 /**
@@ -534,20 +534,20 @@ void sendC(unsigned long code, unsigned int length,Variables* this) {
 
 
   // make sure the receiver is disabled while we transmit
-  int nReceiverInterrupt_backup = this->nReceiverInterrupt;
-  if (nReceiverInterrupt_backup != -1) {
-    disableReceive(this);
-  }
+  // int nReceiverInterrupt_backup = this->nReceiverInterrupt;
+  // if (nReceiverInterrupt_backup != -1) {
+  //   disableReceive(this);
+  // }
 
   
   for (int nRepeat = 0; nRepeat < this->nRepeatTransmit; nRepeat++) {
     for (int i = length-1; i >= 0; i--) {
       if (code & (1L << i))
-        transmit(protocol.one,this);
+        transmit(this->protocol.one,this);
       else
-        transmit(protocol.zero,this);
+        transmit(this->protocol.zero,this);
     }
-    transmit(protocol.syncFactor,this);
+    transmit(this->protocol.syncFactor,this);
   }
 
   // Disable transmit after sending (i.e., for inverted protocols)
@@ -555,9 +555,9 @@ void sendC(unsigned long code, unsigned int length,Variables* this) {
 
 
   // enable receiver again if we just disabled it
-  if (nReceiverInterrupt_backup != -1) {
-    enableReceive(nReceiverInterrupt_backup,this);
-  }
+  // if (nReceiverInterrupt_backup != -1) {
+  //   enableReceive(nReceiverInterrupt_backup,this);
+  // }
 
 }
 

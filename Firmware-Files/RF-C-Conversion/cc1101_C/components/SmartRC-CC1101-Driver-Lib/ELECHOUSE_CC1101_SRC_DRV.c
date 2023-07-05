@@ -1382,7 +1382,7 @@ void Transmitting(unsigned long t_code,Variables* this){
   sendC(t_code, 24,this);
   
 
-  //  SetRx();  // set Receive on
+  SetRx();  // set Receive on
 }
 
 

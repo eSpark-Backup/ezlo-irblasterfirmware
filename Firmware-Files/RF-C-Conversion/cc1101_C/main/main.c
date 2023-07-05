@@ -192,8 +192,9 @@ static void echo_task(void *arg)
                    ESP_LOGI(TAG, "Programming mode");
                    p_mode=true;
                    // xTaskCreate(sweepFrequencyTask, "sweep_freq_task", 2*2048, NULL, 11, NULL);
-                   if(a>0 || b>0 || c>0 || d>0)
+                   if(a>0 || b>0 || c>0 || d>0){
                    SetRx();
+                   }
             }
             else if(*data=='r'){
                    a=0,b=0,c=0,d=0;
@@ -201,7 +202,7 @@ static void echo_task(void *arg)
                    vTaskDelete(sweepTask);
                    sweepTask=NULL;
                    }
-                   else if(getDataTask!=NULL){
+                   if(getDataTask!=NULL){
                    vTaskDelete(getDataTask);
                    getDataTask=NULL;
                    }
@@ -245,10 +246,16 @@ static void echo_task(void *arg)
             }
             else if(*data=='u'){
                   // data[len] = '\0';
-                  if(getDataTask != NULL)
-                  vTaskDelete(getDataTask);
+                  if(getDataTask != NULL){
+                   vTaskDelete(getDataTask);
+                   getDataTask = NULL;
+
+                  }
                   ESP_LOGI(TAG, "Please input the frequency");
-                  // vTaskDelete(sweepTask);
+                  if(sweepTask!=NULL){
+                   vTaskDelete(sweepTask);
+                   sweepTask=NULL;
+                  }
                   int leng=0;
                   while(leng<1)
                   leng=uart_read_bytes(ECHO_UART_PORT_NUM, data, (BUF_SIZE - 1), 20 / portTICK_RATE_MS);
@@ -270,8 +277,11 @@ static void echo_task(void *arg)
                   
             }
             else if(*data=='f'){
-                  if(getDataTask != NULL)
+                  if(getDataTask != NULL){
                   vTaskDelete(getDataTask);
+                  getDataTask=NULL;
+
+            }
                   xTaskCreatePinnedToCore(sweepFrequencyTask, "sweep_freq_task", 2*2048, NULL, 11, &sweepTask,1);
             }
               else if(*data=='t'){
