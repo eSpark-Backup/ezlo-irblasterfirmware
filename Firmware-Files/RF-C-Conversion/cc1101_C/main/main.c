@@ -7,7 +7,7 @@
 #include "driver/uart.h"
 #include "sdkconfig.h"
 #include <string.h>
-
+#include "ezlopi_spi_master.h"
 
 
 #define ECHO_TEST_TXD 43
@@ -30,6 +30,8 @@ Variables var = {
   // .timings[RCSWITCH_MAX_CHANGES];
 };
 
+
+
  float freq_set;
 // receivedData_t received;
 // ELECHOUSE_CC1101 cc1101;
@@ -43,6 +45,7 @@ TaskHandle_t sweepTask=NULL;
 TaskHandle_t getDataTask=NULL;
 esp_err_t ret=ESP_FAIL;
 #define BUF_SIZE (1024)
+
 
 static void getData(void *arg){
       ESP_LOGI(TAG,"GET DATA STARTED!");
@@ -313,10 +316,13 @@ void app_main(void)
       //  cc1101.setup();
       // xTaskCreatePinnedToCore(sweepFrequencyTask, "sweep_freq_task", 2*2048, NULL, 11, NULL,1);
       xTaskCreatePinnedToCore(echo_task, "uart_echo_task", 2*ECHO_TASK_STACK_SIZE, NULL, 9, NULL,0);
+      // ezlopi_uart_init(ECHO_UART_BAUD_RATE, ECHO_TEST_TXD, ECHO_TEST_RXD, ezlopi_pms5003_upcall, NULL);
       Init(); // initialize the cc1101
       setSpiPin(13, 11, 12, 14); // Set custom pins: (SCK, MISO, MOSI, CSN). Must be BEFORE Init()!
       setGDO(10, 9); // Set custom GDO pins: (GDO0, GDO2). Gdo0 (tx) and Gdo2 (rx). Must be BEFORE Init();
       SetRx();
+      ESP_LOGI(TAG,"%u",getPartnum());
+      ESP_LOGI(TAG,"%u",getVersion());
       // setMHZ(433.800598); // Set basic frequency. The lib calculates the frequency automatically (default: 433.92). CC1101 can: 300-348 MHZ, 387-464MHZ and 779-928MHZ. Read More info from datasheet.
       // xTaskCreate(getData, "get_data_task", 2048*2, NULL, 12, &getDataTask);
       // xTaskCreatePinnedToCore(getData, "get_data_task", 2048*2, NULL, 9, NULL,0);

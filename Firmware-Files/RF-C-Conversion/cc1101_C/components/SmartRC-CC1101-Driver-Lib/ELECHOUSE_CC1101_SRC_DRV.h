@@ -21,6 +21,7 @@ cc1101 Driver for RC Switch. Mod by Little Satan. With permission to modify and 
 #include <string.h>
 #include "esp_log.h"
 #include "RCSwitch.h"
+#include "ezlopi_spi_master.h"
 
 typedef uint8_t byte;
 #define HIGH 1

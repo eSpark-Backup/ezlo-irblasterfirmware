@@ -10,6 +10,7 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "RCswitch.h"
+#include "ezlopi_spi_master.h"
 /****************************************************************/
 #define   WRITE_BURST       0x40            //write burst
 #define   READ_SINGLE       0x80            //read single
@@ -21,7 +22,7 @@
 
 #define HOST_ID SPI2_HOST
 
-static spi_device_handle_t _handle;
+// static spi_device_handle_t _handle;
 
 // RCSwitch mySwitch = RCSwitch();
 
@@ -87,6 +88,22 @@ byte clb3[2]= {65,76};
 byte clb4[2]= {77,79};
 static const char* TAG = "CC1101";
 
+s_ezlopi_spi_master_t spiObj= {
+  .enable=true,
+  .cs=14,
+  .miso=11,
+  .mosi=12,
+  .sck=13,
+  .mode=EZLOPI_SPI_CPOL_LOW_CPHA_LOW,
+  .clock_speed_mhz=5,
+  .addr_bits=8,
+  .command_bits=8,
+  .transfer_sz=32,
+  .queue_size=7,
+  .flags=SPI_DEVICE_NO_DUMMY, /* spi_device_interface_config_t flag */
+  .channel=EZLOPI_SPI_2,
+};
+
 static inline void cc1101_Select(){
 	digitalWrite(SS_PIN,LOW);
 }
@@ -119,10 +136,13 @@ uint8_t PA_TABLE_915[10] ={0x03,0x0E,0x1E,0x27,0x38,0x8E,0x84,0xCC,0xC3,0xC0,}; 
 *INPUT        :none
 *OUTPUT       :none
 ****************************************************************/
-esp_err_t SpiStart(void)
+esp_err_t SpiStart()
 {
-  
- return spi_init();
+  	gpio_reset_pin((gpio_num_t)SS_PIN);
+	  gpio_set_direction((gpio_num_t)SS_PIN, GPIO_MODE_OUTPUT);
+	  gpio_set_level((gpio_num_t)SS_PIN, 1);
+    return ezlopi_spi_master_init(&spiObj);
+ 
 }
 
 /****************************************************************
@@ -177,7 +197,6 @@ void spiTransferWord(uint16_t inputData) {
 ****************************************************************/
 esp_err_t Init(void)
 {
-  
 setSpi();
 esp_err_t ret = SpiStart();                   //spi initialization
 ESP_RETURN_ON_ERROR(ret, TAG, "failed to initialize SPI");
@@ -1387,41 +1406,41 @@ void Transmitting(unsigned long t_code,Variables* this){
 
 
 // ELECHOUSE_CC1101 ELECHOUSE_cc1101;
-esp_err_t spi_init() {
-	 esp_err_t ret = ESP_OK;
-	gpio_reset_pin((gpio_num_t)SS_PIN);
-	gpio_set_direction((gpio_num_t)SS_PIN, GPIO_MODE_OUTPUT);
-	gpio_set_level((gpio_num_t)SS_PIN, 1);
-	spi_bus_config_t buscfg = {
+// esp_err_t spi_init() {
+	//  esp_err_t ret = ESP_OK;
+	// gpio_reset_pin((gpio_num_t)SS_PIN);
+	// gpio_set_direction((gpio_num_t)SS_PIN, GPIO_MODE_OUTPUT);
+	// gpio_set_level((gpio_num_t)SS_PIN, 1);
+// 	spi_bus_config_t buscfg = {
 		
-		.mosi_io_num = MOSI_PIN, // set SPI MOSI pin
-		.miso_io_num = MISO_PIN, // set SPI MISO pin
-    .sclk_io_num = SCK_PIN, // set SPI CLK pin
-		.quadwp_io_num = -1,
-		.quadhd_io_num = -1
-	};
+// 		.mosi_io_num = MOSI_PIN, // set SPI MOSI pin
+// 		.miso_io_num = MISO_PIN, // set SPI MISO pin
+//     .sclk_io_num = SCK_PIN, // set SPI CLK pin
+// 		.quadwp_io_num = -1,
+// 		.quadhd_io_num = -1
+// 	};
 	
-	ret = spi_bus_initialize( HOST_ID, &buscfg, SPI_DMA_CH_AUTO );
-  ESP_RETURN_ON_ERROR(ret, TAG, "failed to initialize SPI bus");
-	ESP_LOGI(TAG, "spi_bus_initialize=%d",ret);
-	assert(ret==ESP_OK);
+// 	ret = spi_bus_initialize( HOST_ID, &buscfg, SPI_DMA_CH_AUTO );
+//   ESP_RETURN_ON_ERROR(ret, TAG, "failed to initialize SPI bus");
+// 	ESP_LOGI(TAG, "spi_bus_initialize=%d",ret);
+// 	assert(ret==ESP_OK);
 	
-	spi_device_interface_config_t devcfg = 
-	{
-    .mode = 0, // SPI mode 0
-		.clock_speed_hz = 5000000, // SPI clock is 5 MHz!
-    .spics_io_num = -1, // we will use manual CS control
-    .flags = SPI_DEVICE_NO_DUMMY,
-		.queue_size =7
-	};
+// 	spi_device_interface_config_t devcfg = 
+// 	{
+//     .mode = 0, // SPI mode 0
+// 		.clock_speed_hz = 5000000, // SPI clock is 5 MHz!
+//     .spics_io_num = -1, // we will use manual CS control
+//     .flags = SPI_DEVICE_NO_DUMMY,
+// 		.queue_size =7
+// 	};
 
-	ret = spi_bus_add_device( HOST_ID, &devcfg, &_handle);
-  ESP_RETURN_ON_ERROR(ret, TAG, "failed to add device on bus");
-	ESP_LOGI(TAG, "spi_bus_add_device=%d",ret);
-	// assert(ret==ESP_OK);
+// 	ret = spi_bus_add_device( HOST_ID, &devcfg, &_handle);
+//   ESP_RETURN_ON_ERROR(ret, TAG, "failed to add device on bus");
+// 	ESP_LOGI(TAG, "spi_bus_add_device=%d",ret);
+// 	// assert(ret==ESP_OK);
 	
-	return ret;
-}
+// 	return ret;
+// }
 
 uint8_t spi_transfer(uint8_t address)
 {
@@ -1436,7 +1455,7 @@ uint8_t spi_transfer(uint8_t address)
 	SPITransaction.length = 8;
 	SPITransaction.tx_buffer = dataout;
 	SPITransaction.rx_buffer = datain;
-	spi_device_transmit( _handle, &SPITransaction );
+	spi_device_transmit( spiObj.handle, &SPITransaction );
 
 	return datain[0];
 }
