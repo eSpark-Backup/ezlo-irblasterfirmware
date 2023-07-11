@@ -8,7 +8,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 
-
+#define EZLOPI_UART_CHANNEL_0  0
 #define EZLOPI_UART_CHANNEL_1  1
 #if UART_NUM_MAX > 2
 #define EZLOPI_UART_CHANNEL_2  2
