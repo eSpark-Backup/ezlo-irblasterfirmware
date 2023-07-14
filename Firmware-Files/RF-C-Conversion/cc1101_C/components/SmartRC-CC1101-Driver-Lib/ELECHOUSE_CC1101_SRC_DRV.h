@@ -123,6 +123,22 @@ typedef uint8_t byte;
 
 #define delay(ms) vTaskDelay(ms/ portTICK_PERIOD_MS)
 
+typedef enum events
+{
+    transmitting= 0,
+    set_button,
+    user_input,
+    freq_sweep
+} events;
+
+typedef struct cc1101_data
+{
+    float freq;
+    events event;
+    unsigned long code;
+} cc1101_data;
+
+
 // class ELECHOUSE_CC1101
 // {
 // private:
@@ -202,6 +218,8 @@ typedef uint8_t byte;
   byte getPartnum(void);
   byte getVersion(void);
   void spiTransferWord(uint16_t );
+  void sweepFrequency();
+  void API_function(void* ,Variables* );
   // esp_err_t getData(receivedData_t* );
   // esp_err_t setup();
   void Transmitting(unsigned long,Variables* this);

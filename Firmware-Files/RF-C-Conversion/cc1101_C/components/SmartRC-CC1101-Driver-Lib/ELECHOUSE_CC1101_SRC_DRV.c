@@ -87,6 +87,7 @@ byte clb2[2]= {31,38};
 byte clb3[2]= {65,76};
 byte clb4[2]= {77,79};
 static const char* TAG = "CC1101";
+esp_err_t ret=ESP_FAIL;
 
 s_ezlopi_spi_master_t spiObj= {
   .enable=true,
@@ -103,6 +104,11 @@ s_ezlopi_spi_master_t spiObj= {
   .flags=SPI_DEVICE_NO_DUMMY, /* spi_device_interface_config_t flag */
   .channel=EZLOPI_SPI_2,
 };
+
+int track=0;
+bool task=true;
+bool wFlag=true;
+float freq_set;
 
 static inline void cc1101_Select(){
 	digitalWrite(SS_PIN,LOW);
@@ -197,15 +203,18 @@ void spiTransferWord(uint16_t inputData) {
 ****************************************************************/
 esp_err_t Init(void)
 {
+setSpiPin(13, 11, 12, 14); // Set custom pins: (SCK, MISO, MOSI, CSN). Must be BEFORE Init()!
+setGDO(10, 9); // Set custom GDO pins: (GDO0, GDO2). Gdo0 (tx) and Gdo2 (rx). Must be BEFORE Init();
 setSpi();
-esp_err_t ret = SpiStart();                   //spi initialization
-ESP_RETURN_ON_ERROR(ret, TAG, "failed to initialize SPI");
+esp_err_t retu = SpiStart();                   //spi initialization
+ESP_RETURN_ON_ERROR(retu, TAG, "failed to initialize SPI");
 digitalWrite(SS_PIN, HIGH);
 digitalWrite(SCK_PIN, HIGH);
 digitalWrite(MOSI_PIN, LOW);
 Reset();                    //CC1101 reset
 RegConfigSettings();            //CC1101 register config
-return ret;
+SetRx();
+return retu;
 }
 // /****************************************************************
 // *FUNCTION NAME:SpiWriteReg
@@ -1458,4 +1467,117 @@ uint8_t spi_transfer(uint8_t address)
 	spi_device_transmit( spiObj.handle, &SPITransaction );
 
 	return datain[0];
+}
+
+void sweepFrequency()
+{
+      float start_freq = 300;    //start scan frequency set.
+      float stop_freq = 450;    //stop scan frequency set.
+      int rssi_threshold = -55; // set the threshold to react. the value should be between -20 and -90. recommended -75.
+      float freq = start_freq; //nun
+      long compare_freq=0;
+      float mark_freq=0;
+      int rssi;
+      int mark_rssi=-100;
+      ESP_LOGI(TAG,"Frequency scanner Ready");
+      int i=10000;
+      while(i>0)
+      {
+            setMHZ(freq);
+            rssi = getRssi();
+            if (rssi>rssi_threshold)
+            {
+                  if (rssi > mark_rssi)
+                  {
+                        mark_rssi = rssi;  
+                        mark_freq = freq;
+                  }
+            }
+            freq+=0.1;
+
+            if (freq>stop_freq)
+            {
+                  freq=start_freq;
+                  if (mark_rssi>rssi_threshold)
+                  {
+                  long fr = mark_freq*100;
+                        if (fr == compare_freq)
+                        {
+                              ESP_LOGI(TAG,"Freq: %f ",mark_freq);
+                              ESP_LOGI(TAG,"Rssi: %d ",mark_rssi);
+                              freq_set=mark_freq;
+                              mark_rssi=-100;
+                              compare_freq = 0;
+                              mark_freq = 0;
+                              freq=start_freq;
+                              task=true;
+                              wFlag=false;
+                              // vTaskDelete(NULL);
+                              i=0;
+                        }
+                        else
+                        {
+                              compare_freq = mark_freq*100;
+                              freq = mark_freq -0.10;
+                              mark_freq=0;
+                              mark_rssi=-100;
+                        }
+                  }
+            }
+            i--;
+            if(i==0){
+                  ESP_LOGI(TAG,"Frequency sweep has ended");
+            }
+      }
+}
+
+void API_function(void* data,Variables* this)
+{
+      ESP_LOGI(TAG,"API FUNCTION");
+      cc1101_data* pData=(cc1101_data*) data;
+      if(pData->event==set_button)
+      {
+             ESP_LOGI(TAG, "Programming mode");
+             wFlag=true;
+            //  SetRx();
+            if(task)
+                  setMHZ(freq_set);
+            if(ret!=ESP_OK)
+                  ret=enableReceive(9,this);  // Receiver on interrupt 0
+            ESP_LOGI(TAG,"RX MODE");
+            // Check the CC1101 Spi connection.
+            if (getCC1101())
+            { 
+                  ESP_LOGI(TAG,"CC1101: Connection OK.");
+            }
+            else 
+            {
+                  ESP_LOGI(TAG,"CC1101: Connection error.");
+            }
+             while(wFlag)
+            {
+                  vTaskDelay(75/portTICK_PERIOD_MS);
+                  if (available(this)) 
+                  {
+                        pData->code=getReceivedValue(this);   
+                        ESP_LOGI(TAG,"Value stored in button is %lu",pData->code);
+                        wFlag=false;
+                  }
+            }
+      }
+      else if(pData->event==freq_sweep)
+      {
+            sweepFrequency();
+      }
+      else if(pData->event==user_input)
+      {
+            setMHZ(pData->freq);
+            task=false;
+            wFlag=false;
+      }
+      else if(pData->event==transmitting)
+      {
+            Transmitting(pData->code,this);
+            ESP_LOGI(TAG,"Transmitted");
+      }
 }
