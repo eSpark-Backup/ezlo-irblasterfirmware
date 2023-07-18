@@ -11,6 +11,8 @@
 #include "esp_check.h"
 #include "RCswitch.h"
 #include "ezlopi_spi_master.h"
+#include "ezlopi_uart.h"
+#include "cJSON.h"
 /****************************************************************/
 #define   WRITE_BURST       0x40            //write burst
 #define   READ_SINGLE       0x80            //read single
@@ -105,6 +107,16 @@ s_ezlopi_spi_master_t spiObj= {
   .channel=EZLOPI_SPI_2,
 };
 
+Variables var = {
+  .nReceivedValue = 0,
+  .nReceivedValue = 0,
+  .nReceivedBitlength = 0,
+  .nReceivedDelay = 0,
+  .nReceivedProtocol = 0,
+  .nReceiveTolerance = 60,
+  .nSeparationLimit = 4300,
+};
+cc1101_data data;
 int track=0;
 bool task=true;
 bool wFlag=true;
@@ -203,6 +215,7 @@ void spiTransferWord(uint16_t inputData) {
 ****************************************************************/
 esp_err_t Init(void)
 {
+RCSwitchInit(&var);
 setSpiPin(13, 11, 12, 14); // Set custom pins: (SCK, MISO, MOSI, CSN). Must be BEFORE Init()!
 setGDO(10, 9); // Set custom GDO pins: (GDO0, GDO2). Gdo0 (tx) and Gdo2 (rx). Must be BEFORE Init();
 setSpi();
@@ -214,6 +227,7 @@ digitalWrite(MOSI_PIN, LOW);
 Reset();                    //CC1101 reset
 RegConfigSettings();            //CC1101 register config
 SetRx();
+ezlopi_uart_init(115200, 43, 44, ezlopi_cc1101_upcall, NULL);
 return retu;
 }
 // /****************************************************************
@@ -1401,13 +1415,13 @@ byte getPartnum(void)
 //   return ESP_OK;
 // }
 
-void Transmitting(unsigned long t_code,Variables* this){
-  enableTransmit(10,this);
+void Transmitting(unsigned long t_code){
+  enableTransmit(10,&var);
 
   // cc1101 set Transmit on
   SetTx();
 
-  sendC(t_code, 24,this);
+  sendC(t_code, 24,&var);
   
 
   SetRx();  // set Receive on
@@ -1505,7 +1519,7 @@ void sweepFrequency()
                         {
                               ESP_LOGI(TAG,"Freq: %f ",mark_freq);
                               ESP_LOGI(TAG,"Rssi: %d ",mark_rssi);
-                              freq_set=mark_freq;
+                              data.freq=mark_freq;
                               mark_rssi=-100;
                               compare_freq = 0;
                               mark_freq = 0;
@@ -1531,20 +1545,22 @@ void sweepFrequency()
       }
 }
 
-void API_function(void* data,Variables* this)
+void API_function(void* data)
 {
       ESP_LOGI(TAG,"API FUNCTION");
       cc1101_data* pData=(cc1101_data*) data;
-      if(pData->event==set_button)
+
+      if(pData->event==SET_BUTTON)
       {
              ESP_LOGI(TAG, "Programming mode");
              wFlag=true;
             //  SetRx();
             if(task)
-                  setMHZ(freq_set);
+                  setMHZ(pData->freq);
             if(ret!=ESP_OK)
-                  ret=enableReceive(9,this);  // Receiver on interrupt 0
+                  ret=enableReceive(9,&var);  // Receiver on interrupt 0
             ESP_LOGI(TAG,"RX MODE");
+            // setMHZ(pData->freq);
             // Check the CC1101 Spi connection.
             if (getCC1101())
             { 
@@ -1557,27 +1573,66 @@ void API_function(void* data,Variables* this)
              while(wFlag)
             {
                   vTaskDelay(75/portTICK_PERIOD_MS);
-                  if (available(this)) 
+                  if (available(&var)) 
                   {
-                        pData->code=getReceivedValue(this);   
+                        pData->code=getReceivedValue(&var);   
                         ESP_LOGI(TAG,"Value stored in button is %lu",pData->code);
                         wFlag=false;
+                        resetAvailable(&var);
                   }
             }
       }
-      else if(pData->event==freq_sweep)
+      else if(pData->event==FREQ_SWEEP)
       {
             sweepFrequency();
       }
-      else if(pData->event==user_input)
+      else if(pData->event==USER_INPUT)
       {
             setMHZ(pData->freq);
             task=false;
             wFlag=false;
+            ESP_LOGI(TAG,"Frequency set to %f MHz",pData->freq);
       }
-      else if(pData->event==transmitting)
+      else if(pData->event==TRANSMITTING)
       {
-            Transmitting(pData->code,this);
+            Transmitting(pData->code);
             ESP_LOGI(TAG,"Transmitted");
       }
+}
+
+void ezlopi_cc1101_upcall(uint8_t* buffer, s_ezlopi_uart_object_handle_t uart_object_handle, void* user_args)
+{
+  cc1101_read_upcall(buffer, &data); 
+  API_function(&data);
+}
+
+void cc1101_read_upcall(uint8_t* buffer, cc1101_data* data)
+{
+  // const char* datas={"event":3,"freq":433.92,"code":12330466};
+  
+  char* json_data= (char*)(buffer);
+  printf("%s\n", json_data);
+
+    // Parse JSON
+    cJSON* root = cJSON_Parse(json_data);
+    if (root == NULL) {
+        printf("Error parsing JSON.\n");
+    }
+    else{
+  //   // Get values from JSON
+  //   // data->event = cJSON_GetObjectItem(root, "event")->valueint;
+    data->event = cJSON_GetObjectItem(root, "event")->valueint;
+    data->freq = cJSON_GetObjectItem(root, "freq")->valuedouble;
+    data->code = cJSON_GetObjectItem(root, "code")->valueint;
+
+  //   // Print the values
+  //   // printf("%s\n",buffer);
+    printf("Event: %d\n", data->event);
+    printf("Freq: %.2f\n", data->freq);
+    printf("Code: %lu\n", data->code);
+
+  //   // Clean up cJSON
+    cJSON_Delete(root);
+  //   }
+}
 }

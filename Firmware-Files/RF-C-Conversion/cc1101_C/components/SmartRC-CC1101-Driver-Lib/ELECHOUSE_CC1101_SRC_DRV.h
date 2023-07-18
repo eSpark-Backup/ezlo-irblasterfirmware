@@ -22,6 +22,7 @@ cc1101 Driver for RC Switch. Mod by Little Satan. With permission to modify and 
 #include "esp_log.h"
 #include "RCSwitch.h"
 #include "ezlopi_spi_master.h"
+#include "ezlopi_uart.h"
 
 typedef uint8_t byte;
 #define HIGH 1
@@ -125,10 +126,10 @@ typedef uint8_t byte;
 
 typedef enum events
 {
-    transmitting= 0,
-    set_button,
-    user_input,
-    freq_sweep
+    TRANSMITTING = 0,
+    SET_BUTTON,
+    USER_INPUT,
+    FREQ_SWEEP
 } events;
 
 typedef struct cc1101_data
@@ -219,15 +220,16 @@ typedef struct cc1101_data
   byte getVersion(void);
   void spiTransferWord(uint16_t );
   void sweepFrequency();
-  void API_function(void* ,Variables* );
+  void API_function(void* );
   // esp_err_t getData(receivedData_t* );
   // esp_err_t setup();
-  void Transmitting(unsigned long,Variables* this);
+  void Transmitting(unsigned long);
 // };
 
 esp_err_t spi_init();
 uint8_t spi_transfer(uint8_t );
-
+void ezlopi_cc1101_upcall(uint8_t* , s_ezlopi_uart_object_handle_t , void* );
+void cc1101_read_upcall(uint8_t* ,cc1101_data* );
 // extern ELECHOUSE_CC1101 ELECHOUSE_cc1101;
 
 #endif
