@@ -230,6 +230,7 @@ esp_err_t spi_init();
 uint8_t spi_transfer(uint8_t );
 void ezlopi_cc1101_upcall(uint8_t* , s_ezlopi_uart_object_handle_t , void* );
 void cc1101_read_upcall(uint8_t* ,cc1101_data* );
+void structToJSON(cc1101_data*);
 // extern ELECHOUSE_CC1101 ELECHOUSE_cc1101;
 
 #endif

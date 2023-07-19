@@ -216,6 +216,7 @@ void spiTransferWord(uint16_t inputData) {
 esp_err_t Init(void)
 {
 RCSwitchInit(&var);
+// enableTransmit(10,&var);
 setSpiPin(13, 11, 12, 14); // Set custom pins: (SCK, MISO, MOSI, CSN). Must be BEFORE Init()!
 setGDO(10, 9); // Set custom GDO pins: (GDO0, GDO2). Gdo0 (tx) and Gdo2 (rx). Must be BEFORE Init();
 setSpi();
@@ -226,7 +227,6 @@ digitalWrite(SCK_PIN, HIGH);
 digitalWrite(MOSI_PIN, LOW);
 Reset();                    //CC1101 reset
 RegConfigSettings();            //CC1101 register config
-SetRx();
 ezlopi_uart_init(115200, 43, 44, ezlopi_cc1101_upcall, NULL);
 return retu;
 }
@@ -1415,16 +1415,14 @@ byte getPartnum(void)
 //   return ESP_OK;
 // }
 
-void Transmitting(unsigned long t_code){
-  enableTransmit(10,&var);
-
+void Transmitting(unsigned long t_code)
+{
+  enableTransmit(10, &var);  
   // cc1101 set Transmit on
-  SetTx();
-
+  // SetTx();
   sendC(t_code, 24,&var);
-  
+  // SetRx();  // set Receive on
 
-  SetRx();  // set Receive on
 }
 
 
@@ -1524,9 +1522,6 @@ void sweepFrequency()
                               compare_freq = 0;
                               mark_freq = 0;
                               freq=start_freq;
-                              task=true;
-                              wFlag=false;
-                              // vTaskDelete(NULL);
                               i=0;
                         }
                         else
@@ -1547,29 +1542,29 @@ void sweepFrequency()
 
 void API_function(void* data)
 {
+      // setSidle();
       ESP_LOGI(TAG,"API FUNCTION");
+      ESP_LOGI(TAG,"trxstate = %d", trxstate);
       cc1101_data* pData=(cc1101_data*) data;
 
       if(pData->event==SET_BUTTON)
       {
-             ESP_LOGI(TAG, "Programming mode");
-             wFlag=true;
-            //  SetRx();
-            if(task)
-                  setMHZ(pData->freq);
-            if(ret!=ESP_OK)
-                  ret=enableReceive(9,&var);  // Receiver on interrupt 0
+            ESP_LOGI(TAG, "Programming mode");
+            wFlag=true;
+
+            if(trxstate != 2){
+            SetRx();       //start receive
+            printf("RX called");
+            }
+            setMHZ(pData->freq);
+            enableReceive(9,&var);  // Receiver on interrupt 0
             ESP_LOGI(TAG,"RX MODE");
-            // setMHZ(pData->freq);
+            
             // Check the CC1101 Spi connection.
             if (getCC1101())
-            { 
                   ESP_LOGI(TAG,"CC1101: Connection OK.");
-            }
-            else 
-            {
+            else
                   ESP_LOGI(TAG,"CC1101: Connection error.");
-            }
              while(wFlag)
             {
                   vTaskDelay(75/portTICK_PERIOD_MS);
@@ -1579,24 +1574,33 @@ void API_function(void* data)
                         ESP_LOGI(TAG,"Value stored in button is %lu",pData->code);
                         wFlag=false;
                         resetAvailable(&var);
+                        // SetTx();
                   }
             }
       }
       else if(pData->event==FREQ_SWEEP)
       {
+            // SetRx();
+            if(trxstate != 2){
+            SetRx();       //start receive
+            printf("RX called");
+            }
             sweepFrequency();
       }
       else if(pData->event==USER_INPUT)
       {
             setMHZ(pData->freq);
-            task=false;
-            wFlag=false;
             ESP_LOGI(TAG,"Frequency set to %f MHz",pData->freq);
+            
       }
       else if(pData->event==TRANSMITTING)
       {
+            SetTx(); //start Transmit   
+            setMHZ(pData->freq);
             Transmitting(pData->code);
             ESP_LOGI(TAG,"Transmitted");
+            SetRx();  // set Receive on
+            trxstate=1;
       }
 }
 
@@ -1604,6 +1608,7 @@ void ezlopi_cc1101_upcall(uint8_t* buffer, s_ezlopi_uart_object_handle_t uart_ob
 {
   cc1101_read_upcall(buffer, &data); 
   API_function(&data);
+  structToJSON(&data);
 }
 
 void cc1101_read_upcall(uint8_t* buffer, cc1101_data* data)
@@ -1635,4 +1640,17 @@ void cc1101_read_upcall(uint8_t* buffer, cc1101_data* data)
     cJSON_Delete(root);
   //   }
 }
+}
+
+void structToJSON(cc1101_data* data)
+{
+  cJSON *jsonObject = cJSON_CreateObject();
+  cJSON_AddNumberToObject(jsonObject, "event", data->event);
+  cJSON_AddNumberToObject(jsonObject, "freq", data->freq);
+  cJSON_AddNumberToObject(jsonObject, "code", data->code);
+  char *jsonString = cJSON_Print(jsonObject);
+  uart_write_bytes(UART_NUM_0, jsonString, strlen(jsonString));
+  cJSON_Delete(jsonObject);
+  free(jsonString);
+  jsonString=NULL;
 }

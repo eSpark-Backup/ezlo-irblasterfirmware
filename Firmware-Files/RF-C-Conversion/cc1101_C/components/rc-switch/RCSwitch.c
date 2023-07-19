@@ -534,10 +534,10 @@ void sendC(unsigned long code, unsigned int length,Variables* this) {
 
 
   // make sure the receiver is disabled while we transmit
-  // int nReceiverInterrupt_backup = this->nReceiverInterrupt;
-  // if (nReceiverInterrupt_backup != -1) {
-  //   disableReceive(this);
-  // }
+  int nReceiverInterrupt_backup = this->nReceiverInterrupt;
+  if (nReceiverInterrupt_backup != -1) {
+    disableReceive(this);
+  }
 
   
   for (int nRepeat = 0; nRepeat < this->nRepeatTransmit; nRepeat++) {
@@ -555,9 +555,9 @@ void sendC(unsigned long code, unsigned int length,Variables* this) {
 
 
   // enable receiver again if we just disabled it
-  // if (nReceiverInterrupt_backup != -1) {
-  //   enableReceive(nReceiverInterrupt_backup,this);
-  // }
+  if (nReceiverInterrupt_backup != -1) {
+    enableReceive(nReceiverInterrupt_backup,this);
+  }
 
 }
 
