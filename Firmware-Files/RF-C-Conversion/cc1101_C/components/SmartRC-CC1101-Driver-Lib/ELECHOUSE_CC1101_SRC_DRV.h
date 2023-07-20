@@ -219,13 +219,14 @@ typedef struct cc1101_data
   byte getPartnum(void);
   byte getVersion(void);
   void spiTransferWord(uint16_t );
-  void sweepFrequency();
+  float sweepFrequency();
   void API_function(void* );
   // esp_err_t getData(receivedData_t* );
   // esp_err_t setup();
   void Transmitting(unsigned long);
 // };
-
+float SearchFrequency(float mhz, float freqSpace, bool isDetails);
+float searchFrequencyForRange(float startMhz, float endMhz, float freqSpace, bool isDetails);
 esp_err_t spi_init();
 uint8_t spi_transfer(uint8_t );
 void ezlopi_cc1101_upcall(uint8_t* , s_ezlopi_uart_object_handle_t , void* );

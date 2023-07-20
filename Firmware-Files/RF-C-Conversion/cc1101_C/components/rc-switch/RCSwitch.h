@@ -131,13 +131,13 @@ typedef struct {
     void sendB(const char* sCodeWord,Variables* this);
     
     
-    esp_err_t enableReceive(int interrupt,Variables* );
+    esp_err_t enableReceive(int interrupt,Variables* this);
     void enableReceive1(Variables* );
     void disableReceive(Variables* );
-    bool available();
-    void resetAvailable();
+    bool available(Variables* this);
+    void resetAvailable(Variables* this);
 
-    unsigned long getReceivedValue();
+    unsigned long getReceivedValue(Variables* this);
     unsigned int getReceivedBitlength();
     unsigned int getReceivedDelay();
     unsigned int getReceivedProtocol();

@@ -61,7 +61,7 @@ static void gpio_interrupt_handler(void* args);
     #define RECEIVE_ATTR IRAM_ATTR
     #define VAR_ISR_ATTR DRAM_ATTR
 #else
-    #define RECEIVE_ATTR
+    #define RECEIVE_ATTR IRAM_ATTR
     #define VAR_ISR_ATTR
 #endif
 

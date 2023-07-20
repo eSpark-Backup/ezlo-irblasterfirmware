@@ -65,7 +65,7 @@ byte GDO2_M[max_modul];
 byte gdo_set=0;
 bool spi = 0;
 bool ccmode = 0;
-float MHz = 433.92;
+float MHz = 400;
 byte m4RxBw = 0;
 byte m4DaRa;
 byte m2DCOFF;
@@ -227,6 +227,7 @@ digitalWrite(SCK_PIN, HIGH);
 digitalWrite(MOSI_PIN, LOW);
 Reset();                    //CC1101 reset
 RegConfigSettings();            //CC1101 register config
+enableReceive(9,&var);  // Receiver on interrupt 0
 ezlopi_uart_init(115200, 43, 44, ezlopi_cc1101_upcall, NULL);
 return retu;
 }
@@ -564,7 +565,7 @@ void setMHZ(float mhz){
 uint16_t freq2 = 0;
 uint16_t freq1 = 0;
 uint16_t freq0 = 0;
-MHz = mhz;
+// MHz = mhz;
 
 for (bool i = 0; i==0;){
 if (mhz >= 26){
@@ -1481,23 +1482,50 @@ uint8_t spi_transfer(uint8_t address)
 	return datain[0];
 }
 
-void sweepFrequency()
+float sweepFrequency()
 {
-      float start_freq = 300;    //start scan frequency set.
-      float stop_freq = 450;    //stop scan frequency set.
-      int rssi_threshold = -55; // set the threshold to react. the value should be between -20 and -90. recommended -75.
-      float freq = start_freq; //nun
-      long compare_freq=0;
-      float mark_freq=0;
-      int rssi;
-      int mark_rssi=-100;
-      ESP_LOGI(TAG,"Frequency scanner Ready");
-      int i=10000;
-      while(i>0)
-      {
+  ESP_LOGI(TAG,"Frequency scanner Ready");
+  float loopFrequency;
+  for(int i=0;i<=3;i++){
+  loopFrequency = searchFrequencyForRange(300, 347, 0.1, true);
+  ESP_LOGI(TAG,"loopFrequency:315 =%.2f ",loopFrequency);
+   if(loopFrequency!=-1){
+    return loopFrequency;
+  }
+  loopFrequency = searchFrequencyForRange(388, 463, 0.1, true);
+  ESP_LOGI(TAG,"loopFrequency:433 =%.2f ",loopFrequency);
+   if(loopFrequency!=-1){
+    return loopFrequency;
+  }
+  loopFrequency = searchFrequencyForRange(779, 927, 0.1, true);
+  ESP_LOGI(TAG,"loopFrequency:868 =%.2f ",loopFrequency);
+   if(loopFrequency!=-1){
+    return loopFrequency;
+  }
+  }
+  return 0;
+}
+
+float searchFrequency(float mhz, float freqSpace, bool isDetails) {
+  float start_freq = mhz;
+  float stop_freq = mhz + 1;
+  float freq = mhz;
+  long compare_freq=0;
+  float mark_freq=0;
+  int rssi=0;
+  int mark_rssi = -60;
+  int searchTime = 0;
+  // setMHZ(mhz);
+  // setRxBW(58.03);
+  SetRx();
+  vTaskDelay(20/portTICK_PERIOD_MS);
+      // ESP_LOGI(TAG,"Frequency scanner Ready");
+     while (1) {
+        searchTime++;
+      
             setMHZ(freq);
             rssi = getRssi();
-            if (rssi>rssi_threshold)
+            if (rssi>-60)
             {
                   if (rssi > mark_rssi)
                   {
@@ -1505,39 +1533,59 @@ void sweepFrequency()
                         mark_freq = freq;
                   }
             }
-            freq+=0.1;
+            freq+=freqSpace;
 
             if (freq>stop_freq)
             {
                   freq=start_freq;
-                  if (mark_rssi>rssi_threshold)
+                  if (mark_rssi>-60)
                   {
                   long fr = mark_freq*100;
                         if (fr == compare_freq)
                         {
                               ESP_LOGI(TAG,"Freq: %f ",mark_freq);
                               ESP_LOGI(TAG,"Rssi: %d ",mark_rssi);
-                              data.freq=mark_freq;
-                              mark_rssi=-100;
+                              float saveMarkFreq=mark_freq;
+                              mark_rssi=-60;
                               compare_freq = 0;
                               mark_freq = 0;
-                              freq=start_freq;
-                              i=0;
+                              if (isDetails) {
+                                return saveMarkFreq;
+                              } 
+                              else {
+                                float startSaveMarkFreq = (int)saveMarkFreq - 3;
+                                float endSaveMarkFreq = (int)saveMarkFreq + 3;
+                                float getDetailsRequency = searchFrequencyForRange(startSaveMarkFreq, endSaveMarkFreq, 0.01, true);
+                                return getDetailsRequency;
+                              }
                         }
                         else
                         {
                               compare_freq = mark_freq*100;
                               freq = mark_freq -0.10;
                               mark_freq=0;
-                              mark_rssi=-100;
+                              mark_rssi=-60;
                         }
                   }
-            }
-            i--;
-            if(i==0){
-                  ESP_LOGI(TAG,"Frequency sweep has ended");
+                  else{
+                    return -1;
+                  }
             }
       }
+}
+
+float searchFrequencyForRange(float startMhz, float endMhz, float freqSpace, bool isDetails) {
+  while (1) {
+    float frequency = searchFrequency(startMhz, freqSpace, isDetails);
+
+    if (frequency != -1) {
+      return frequency;
+    }
+    startMhz++;
+    if (startMhz > endMhz) {
+      return -1;
+    }
+  }
 }
 
 void API_function(void* data)
@@ -1549,17 +1597,17 @@ void API_function(void* data)
 
       if(pData->event==SET_BUTTON)
       {
-            ESP_LOGI(TAG, "Programming mode");
-            wFlag=true;
-
+            setMHZ(pData->freq);
             if(trxstate != 2){
             SetRx();       //start receive
             printf("RX called");
             }
+
+            ESP_LOGI(TAG, "Programming mode");
+            wFlag=true;
             setMHZ(pData->freq);
-            enableReceive(9,&var);  // Receiver on interrupt 0
             ESP_LOGI(TAG,"RX MODE");
-            
+            // SetRx();
             // Check the CC1101 Spi connection.
             if (getCC1101())
                   ESP_LOGI(TAG,"CC1101: Connection OK.");
@@ -1567,7 +1615,9 @@ void API_function(void* data)
                   ESP_LOGI(TAG,"CC1101: Connection error.");
              while(wFlag)
             {
-                  vTaskDelay(75/portTICK_PERIOD_MS);
+                  
+                  // resetAvailable(&var);
+                  // vTaskDelay(75/portTICK_PERIOD_MS);
                   if (available(&var)) 
                   {
                         pData->code=getReceivedValue(&var);   
@@ -1581,11 +1631,11 @@ void API_function(void* data)
       else if(pData->event==FREQ_SWEEP)
       {
             // SetRx();
-            if(trxstate != 2){
-            SetRx();       //start receive
-            printf("RX called");
-            }
-            sweepFrequency();
+            // if(trxstate != 2){
+            // SetRx();       //start receive
+            // printf("RX called");
+            // }
+            pData->freq=sweepFrequency();
       }
       else if(pData->event==USER_INPUT)
       {
@@ -1595,13 +1645,16 @@ void API_function(void* data)
       }
       else if(pData->event==TRANSMITTING)
       {
+            setMHZ(pData->freq);
             SetTx(); //start Transmit   
             setMHZ(pData->freq);
             Transmitting(pData->code);
             ESP_LOGI(TAG,"Transmitted");
-            SetRx();  // set Receive on
-            trxstate=1;
+            // SetRx();  // set Receive on
+            // trxstate=1;
+            // goSleep();
       }
+      setSidle();
 }
 
 void ezlopi_cc1101_upcall(uint8_t* buffer, s_ezlopi_uart_object_handle_t uart_object_handle, void* user_args)
