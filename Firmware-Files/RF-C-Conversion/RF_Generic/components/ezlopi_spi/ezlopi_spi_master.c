@@ -38,24 +38,23 @@ int ezlopi_spi_master_init(s_ezlopi_spi_master_t *spi_config)
                 .sclk_io_num = spi_config->sck,
                 .quadhd_io_num = -1,
                 .quadwp_io_num = -1,
-                // .max_transfer_sz = spi_config->transfer_sz,
-                // .flags = spi_config->flags,
+                .max_transfer_sz = spi_config->transfer_sz,
+                .flags = spi_config->flags,
 #if CONFIG_SPI_MASTER_ISR_IN_IRAM
                 .intr_flags = ESP_INTR_FLAG_IRAM
 #endif
             };
 
             spi_device_interface_config_t devcfg = {
-                // .command_bits = spi_config->command_bits,
-                // .address_bits = spi_config->addr_bits,
+                .command_bits = spi_config->command_bits,
+                .address_bits = spi_config->addr_bits,
                 .mode = spi_config->mode,       // SPI mode 0
                 .clock_speed_hz = spi_config->clock_speed_mhz * 1000000,
                 .queue_size = spi_config->queue_size,
-                // .pre_cb = NULL,
-                // .post_cb = NULL,
-                // .input_delay_ns = 0,            // the EEPROM output the data half a SPI clock behind.
-                .spics_io_num = -1, // not used
-                .flags = spi_config->flags
+                .pre_cb = NULL,
+                .post_cb = NULL,
+                .input_delay_ns = 0,            // the EEPROM output the data half a SPI clock behind.
+                .spics_io_num = spi_config->cs, // not used
             };
 
             do

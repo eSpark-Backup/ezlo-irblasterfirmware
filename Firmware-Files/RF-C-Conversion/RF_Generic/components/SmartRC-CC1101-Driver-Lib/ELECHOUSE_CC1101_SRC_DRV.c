@@ -95,17 +95,17 @@ esp_err_t ret=ESP_FAIL;
 
 s_ezlopi_spi_master_t spiObj= {
   .enable=true,
-  .cs=14,
+  .cs=-1,
   .miso=11,
   .mosi=12,
   .sck=13,
   .mode=EZLOPI_SPI_CPOL_LOW_CPHA_LOW,
   .clock_speed_mhz=5,
-  .addr_bits=8,
-  .command_bits=8,
+  .addr_bits=0,
+  .command_bits=0,
   .transfer_sz=32,
   .queue_size=7,
-  .flags=SPI_DEVICE_NO_DUMMY, /* spi_device_interface_config_t flag */
+  .flags=SPICOMMON_BUSFLAG_MASTER, /* spi_device_interface_config_t flag */
   .channel=EZLOPI_SPI_2,
 };
 
