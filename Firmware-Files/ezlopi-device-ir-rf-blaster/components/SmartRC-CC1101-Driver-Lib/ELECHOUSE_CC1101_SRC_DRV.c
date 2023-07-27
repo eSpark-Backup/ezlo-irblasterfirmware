@@ -25,6 +25,7 @@
 #define INPUT GPIO_MODE_INPUT
 
 #define HOST_ID SPI2_HOST
+#define DEBUG 0
 
 // static spi_device_handle_t _handle;
 
@@ -1392,21 +1393,29 @@ uint8_t spi_transfer(uint8_t address)
 
 float sweepFrequency()
 {
+  #if DEBUG==1
   ESP_LOGI(TAG,"Frequency scanner Ready");
+  #endif
   float loopFrequency;
   for(int i=0;i<=3;i++){
   loopFrequency = searchFrequencyForRange(300, 347, 0.1, true);
+  #if DEBUG==1
   ESP_LOGI(TAG,"loopFrequency:315 =%.2f ",loopFrequency);
+  #endif
    if(loopFrequency!=-1){
     return loopFrequency;
   }
   loopFrequency = searchFrequencyForRange(388, 463, 0.1, true);
+  #if DEBUG==1
   ESP_LOGI(TAG,"loopFrequency:433 =%.2f ",loopFrequency);
+  #endif 
    if(loopFrequency!=-1){
     return loopFrequency;
   }
   loopFrequency = searchFrequencyForRange(779, 927, 0.1, true);
+  #if DEBUG==1
   ESP_LOGI(TAG,"loopFrequency:868 =%.2f ",loopFrequency);
+  #endif 
    if(loopFrequency!=-1){
     return loopFrequency;
   }
@@ -1421,7 +1430,7 @@ float searchFrequency(float mhz, float freqSpace, bool isDetails) {
   long compare_freq=0;
   float mark_freq=0;
   int rssi=0;
-  int mark_rssi = -60;
+  int mark_rssi = -50;
   int searchTime = 0;
   // setMHZ(mhz);
   // setRxBW(58.03);
@@ -1433,7 +1442,7 @@ float searchFrequency(float mhz, float freqSpace, bool isDetails) {
       
             setMHZ(freq);
             rssi = getRssi();
-            if (rssi>-60)
+            if (rssi>-50)
             {
                   if (rssi > mark_rssi)
                   {
@@ -1446,7 +1455,7 @@ float searchFrequency(float mhz, float freqSpace, bool isDetails) {
             if (freq>stop_freq)
             {
                   freq=start_freq;
-                  if (mark_rssi>-60)
+                  if (mark_rssi>-50)
                   {
                   long fr = mark_freq*100;
                         if (fr == compare_freq)
@@ -1454,7 +1463,7 @@ float searchFrequency(float mhz, float freqSpace, bool isDetails) {
                               ESP_LOGI(TAG,"Freq: %f ",mark_freq);
                               ESP_LOGI(TAG,"Rssi: %d ",mark_rssi);
                               float saveMarkFreq=mark_freq;
-                              mark_rssi=-60;
+                              mark_rssi=-50;
                               compare_freq = 0;
                               mark_freq = 0;
                               if (isDetails) {
@@ -1472,7 +1481,7 @@ float searchFrequency(float mhz, float freqSpace, bool isDetails) {
                               compare_freq = mark_freq*100;
                               freq = mark_freq -0.10;
                               mark_freq=0;
-                              mark_rssi=-60;
+                              mark_rssi=-50;
                         }
                   }
                   else{
@@ -1524,10 +1533,11 @@ void cc1101_read_upcall(uint8_t* buffer, cc1101_data* data)
 
   //   // Print the values
   //   // printf("%s\n",buffer);
+  #if DEBUG==1
     printf("Event: %d\n", data->event);
     printf("Freq: %.2f\n", data->freq);
     printf("Code: %lu\n", data->code);
-
+  #endif
   //   // Clean up cJSON
     cJSON_Delete(root);
   //   }
@@ -1540,18 +1550,23 @@ void setButton(cc1101_data* bData)
     if (trxstate != 2)
     {
       SetRx(); // start receive
+      #if DEBUG==1
       printf("RX called");
+      #endif
     } 
-
+      #if DEBUG==1
     ESP_LOGI(TAG, "Programming mode");
+      #endif
     wFlag = true;
     // setMHZ(bData->freq);
+    #if DEBUG==1
     ESP_LOGI(TAG, "RX MODE");
     // Check the CC1101 Spi connection.
     if (getCC1101())
       ESP_LOGI(TAG, "CC1101: Connection OK.");
     else
       ESP_LOGI(TAG, "CC1101: Connection error.");
+    #endif
     while (wFlag)
     {
 
@@ -1560,7 +1575,9 @@ void setButton(cc1101_data* bData)
       if (available(&var))
       {
         bData->code = getReceivedValue(&var);
+        #if DEBUG==1
         ESP_LOGI(TAG, "Value stored in button is %lu", bData->code);
+        #endif
         wFlag = false;
         resetAvailable(&var);
       }
@@ -1573,7 +1590,9 @@ void Transmitting(cc1101_data* tData)
   setMHZ(tData->freq);
   SetTx(); // start Transmit
   setMHZ(tData->freq);
+  #if DEBUG==1
   ESP_LOGI(TAG,"code being transmitted is %lu",tData->code);
+  #endif
   sendC(tData->code, 24, &var);
 }
 

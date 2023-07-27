@@ -37,7 +37,6 @@
 #include "string.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-// #include "functional.h"
 typedef uint8_t byte;
 
 static void gpio_interrupt_handler(void* args);

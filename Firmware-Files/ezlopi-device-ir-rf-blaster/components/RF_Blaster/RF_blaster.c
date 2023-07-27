@@ -1,25 +1,14 @@
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
-#include "driver/gpio.h"
-#include "string.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include <math.h>
-#include "driver/spi_slave.h"
-#include <string.h>
-#include <driver/spi_master.h>
 #include "esp_log.h"
-#include "esp_check.h"
-#include "RCswitch.h"
-#include "ezlopi_spi_master.h"
-#include "ezlopi_uart.h"
-#include "cJSON.h"
 #include "RF_blaster.h"
 
 const char* TAG="RF_blaster";
-
+#define DEBUG 0
 void RF_Generic_API(void *data)
 {
+  #if DEBUG==1
   ESP_LOGI(TAG, "API FUNCTION");
+  #endif
   cc1101_data *pData = (cc1101_data *)data;
 
   if (pData->event == SET_BUTTON)
@@ -33,12 +22,16 @@ void RF_Generic_API(void *data)
   else if (pData->event == USER_INPUT)
   {
     setMHZ(pData->freq);
+    #if DEBUG==1
     ESP_LOGI(TAG, "Frequency set to %f MHz", pData->freq);
+    #endif
   }
   else if (pData->event == TRANSMITTING)
   {
     Transmitting(pData);
+    #if DEBUG==1
     ESP_LOGI(TAG, "Transmitted");
+    #endif
   }
   setSidle();
 }

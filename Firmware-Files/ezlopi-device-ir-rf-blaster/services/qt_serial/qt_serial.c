@@ -371,4 +371,6 @@ void qt_serial_init(void)
 {
     serial_init();
     xTaskCreate(qt_serial_rx_task, "qt_serial_rx_task", 1024 * 10, NULL, configMAX_PRIORITIES, NULL);
+    
+
 }
